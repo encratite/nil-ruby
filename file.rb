@@ -1,7 +1,7 @@
 module Nil
 	def self.readFile(path)
 		begin
-			file = File.open(path, 'r')
+			file = File.open(path, 'rb')
 			return file.read
 		rescue Errno::ENOENT
 			return nil
@@ -16,7 +16,7 @@ module Nil
 	
 	def self.writeFile(path, data)
 		begin
-			file = File.open(path, 'w+')
+			file = File.open(path, 'wb+')
 			file.write data
 		rescue Errno::EINVAL
 			return nil
