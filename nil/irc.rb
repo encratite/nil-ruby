@@ -3,7 +3,7 @@ require 'timeout'
 require 'nil/random'
 
 module Nil
-	class IRCuser
+	class IRCUser
 		attr_reader :raw, :error, :nick, :ident, :address
 		
 		def initialize(input)
@@ -55,6 +55,8 @@ module Nil
 			@nickChangeDelay = 5
 			
 			setEvents
+			
+			Thread.abort_on_exception = true
 		end
 		
 		def setServer(host, port = 6667)
@@ -155,7 +157,6 @@ module Nil
 		
 		def runReader
 			while true
-				puts 'Reader'
 				processData
 			end
 		end
@@ -164,27 +165,19 @@ module Nil
 			begin
 				timeout(@receiveTimeout) do
 					data = @socket.recv(@receiveSize)
-					puts "Got data: #{data}"
 					forceDisconnect if data.empty?
-					puts "Appending #{data.size} bytes to the buffer"
-					@buffer.append(data)
-					puts 'Appended data'
+					@buffer.concat(data)
 				end
 			rescue Timeout::Error
-				puts 'Timeout error'
 				@onTimeout.call
 				forceDisconnect
 			end
-			puts 'End of receiveData'
 		end
 		
 		def processData
 			receiveData
-			puts 'Blah'
 			while true
-				puts 'Blah2'
 				line = getLine
-				puts 'Blah3'
 				return if line == nil
 				processLine line
 			end
@@ -193,14 +186,13 @@ module Nil
 		def getLine
 			offset = @buffer.index("\n")
 			return nil if offset == nil
-			line = buffer[0..offset].chop
+			line = @buffer[0..offset].chop
 			newBuffer = @buffer[(offset + 1)..-1]
 			@buffer.replace(newBuffer)
 			return line
 		end
 		
 		def processLine(line)
-			puts "Got a line: #{line}"
 			@onLine.call(line)
 			return if line.empty?
 			delimiter = ' '
@@ -212,11 +204,11 @@ module Nil
 				tokens << line[(offset + 1)..-1]
 			end
 			
-			processComand tokens
+			processCommand tokens
 		end
 		
 		def processCommand(tokens)
-			if tokens[0] && len(tokens) == 2
+			if tokens[0] && tokens.size == 2
 				sendLine "PONG #{tokens[1]}"
 				@pingCounter += 1
 				forceDisconnect if @maximumPingCount != nil && @pingCounter >= @maximumPingCount
