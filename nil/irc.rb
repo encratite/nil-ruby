@@ -57,7 +57,7 @@ module Nil
 			setEvents
 		end
 		
-		def setServer(host, port)
+		def setServer(host, port = 6667)
 			@host = host
 			@port = port
 			@gotServer = true
@@ -89,7 +89,7 @@ module Nil
 		end
 		
 		def start
-			if @gotServer && @gotuser
+			if @gotServer && @gotUser
 				return Thread.new { serverHandler }
 			else
 				raise 'The IRC client has not been fully initialised yet'
@@ -133,6 +133,15 @@ module Nil
 			@socket.print(input + "\r\n")
 		end
 		
+		def tryToSendLine(input)
+			begin
+				sendLine input
+				return true
+			rescue IOError
+				return false
+			end
+		end
+		
 		def logIn
 			changeNick @nick
 			sendLine "USER #{@user} \"#{@localHost}\" \"#{@host}\" :#{@realName}"
@@ -145,27 +154,36 @@ module Nil
 		
 		def runReader
 			while true
+				puts 'Reader'
 				processData
 			end
 		end
 		
 		def receiveData
 			begin
-				Timeout::timeout(@receiveTimeout) do
+				timeout(@receiveTimeout) do
 					data = @socket.recv(@receiveSize)
+					puts "Got data: #{data}"
 					forceDisconnect if data.empty?
-					@buffer.append data
+					puts "Appending #{data.size} bytes to the buffer"
+					@buffer.append(data)
+					puts 'Appended data'
 				end
 			rescue Timeout::Error
+				puts 'Timeout error'
 				@onTimeout.call
 				forceDisconnect
 			end
+			puts 'End of receiveData'
 		end
 		
 		def processData
 			receiveData
+			puts 'Blah'
 			while true
+				puts 'Blah2'
 				line = getLine
+				puts 'Blah3'
 				return if line == nil
 				processLine line
 			end
@@ -181,6 +199,7 @@ module Nil
 		end
 		
 		def processLine(line)
+			puts "Got a line: #{line}"
 			@onLine.call(line)
 			return if line.empty?
 			delimiter = ' '
