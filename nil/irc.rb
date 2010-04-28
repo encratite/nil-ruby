@@ -4,7 +4,7 @@ require 'nil/random'
 
 module Nil
 	class IRCUser
-		attr_reader :raw, :error, :nick, :ident, :address
+		attr_reader :raw, :error, :nick, :ident, :host
 		
 		def initialize(input)
 			@raw = input
@@ -19,7 +19,7 @@ module Nil
 			return if @error
 			
 			@ident = tokens[0]
-			@address = tokens[1]
+			@host = tokens[1]
 		end
 	end
 	
@@ -327,7 +327,7 @@ module Nil
 			lastIndex = input.length - 1
 			while i <= lastIndex
 				currentChar = input[i]
-				if ord(currentChar) < ' '.ord
+				if currentChar.ord < ' '.ord
 					if currentChar == "\x03" and lastIndex - i >= 2
 						nextChar = input[i + 1]
 						nextCharValue = nextChar.ord
