@@ -101,6 +101,7 @@ module Nil
 				begin
 					connect
 				rescue IOError
+					raise 'IOError occured'
 					@onDisconnect.call
 					if @autoReconnect
 						sleep @reconnectDelay
