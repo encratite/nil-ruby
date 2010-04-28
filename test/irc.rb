@@ -6,7 +6,7 @@ end
 
 def getTestClient
 	server = 'irc.freenode.net'
-	nick = 'test'
+	nick = 'test__'
 	user = nick
 	localHost = nick
 	realName = nick

@@ -40,6 +40,11 @@ module Nil
 			@onLine = DoNothing
 			@onEntry = DoNothing
 			@onNickInUse = method(:reclaimNick)
+			@onNotice = DoNothing
+			@onInvite = DoNothing
+			@onPrivateMessage = DoNothing
+			@onChannelMessage = DoNothing
+			@onQuit = DoNothing
 			
 			@autoReconnect = true
 			@reconnectDelay = 5
@@ -79,6 +84,7 @@ module Nil
 				['376', :eventEndOfMotd],
 				['422', :eventEndOfMotd],
 				['433', :eventNickInUse],
+				['437', :eventNickInUse],
 				['NOTICE', :eventNotice],
 				['INVITE', :eventInvite],
 				['JOIN', :eventJoin],
