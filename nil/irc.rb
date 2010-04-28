@@ -15,7 +15,7 @@ module Nil
 			@nick = tokens[0]
 			
 			tokens = tokens[1].split('@')
-			@error = true = tokens.size != 2
+			@error = true if tokens.size != 2
 			return if @error
 			
 			@ident = tokens[0]
@@ -190,6 +190,7 @@ module Nil
 			else
 				tokens = line[0..(offset - 2)].split(delimiter)
 				tokens << line[(offset + 1)..-1]
+			end
 			
 			processComand tokens
 		end
@@ -260,9 +261,10 @@ module Nil
 			user = IRCUser.new(tokens[0])
 			return if user.error
 			channel = tokens[-1]
-			@onInvite(user, channel)
+			@onInvite.call(user, channel)
+		end
 			
-		def eventJoin(self, tokens)
+		def eventJoin(tokens)
 			user = IRCUser.new(tokens[0])
 			return if user.error
 			ownJoin = (user.nick == @actualNick)
@@ -276,9 +278,9 @@ module Nil
 			target = tokens[2]
 			message = tokens[-1]
 			if target == @nick
-				@onPrivateMessage(user, message)
+				@onPrivateMessage.call(user, message)
 			else
-				@onChannelMessage(target, user, message)
+				@onChannelMessage.call(target, user, message)
 			end
 		end
 				
@@ -291,7 +293,7 @@ module Nil
 			return if user.error
 				return
 			message = tokens[-1]
-			@onQuit(user, message)
+			@onQuit.call(user, message)
 		end
 	end
 end
