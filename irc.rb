@@ -221,6 +221,14 @@ module Nil
 		def changeNick(newNick)
 			sendLine "NICK #{newNick}"
 		end
+		
+		def quit(message = nil)
+			if message == nil
+				sendLine 'QUIT'
+			else
+				sendLine "QUIT :#{message}"
+			end
+		end
 			
 		def eventEndOfMotd(tokens)
 			@actualNick = tokens[2]
