@@ -42,6 +42,7 @@ module Nil
 			@onNickInUse = method(:reclaimNick)
 			@onNotice = DoNothing
 			@onInvite = DoNothing
+			@onJoin = DoNothing
 			@onPrivateMessage = DoNothing
 			@onChannelMessage = DoNothing
 			@onQuit = DoNothing
