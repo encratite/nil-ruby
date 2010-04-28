@@ -242,10 +242,15 @@ module Nil
 		end
 		
 		def quit(message = nil)
-			if message == nil
-				sendLine 'QUIT'
-			else
-				sendLine "QUIT :#{message}"
+			begin
+				if message == nil
+					sendLine 'QUIT'
+				else
+					sendLine "QUIT :#{message}"
+				end
+				@autoReconnect = false
+				@socket.close
+			rescue IOError
 			end
 		end
 			
