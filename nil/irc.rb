@@ -26,7 +26,7 @@ module Nil
 	class IRCClient
 		DoNothing = lambda { |*arguments| }
 		
-		attr_writer :onConnecting, :onConnect, :onConnectError, :onConnected, :onDisconnect, :onTimeout, :onLine, :onEntry
+		attr_writer :onConnecting, :onConnect, :onConnectError, :onConnected, :onDisconnect, :onTimeout, :onLine, :onEntry, :onNickInUse, :onNotice, :onInvite, :onJoin, :onPrivateMessage, :onChannelMessage, :onQuit
 		
 		attr_writer :autoReconnect, :reconnectDelay
 		
@@ -318,6 +318,37 @@ module Nil
 				return
 			message = tokens[-1]
 			@onQuit.call(user, message)
+		end
+		
+		def self.stripTags(input)
+			output = ''	
+			
+			i = 0
+			lastIndex = input.length - 1
+			while i <= lastIndex
+				currentChar = input[i]
+				if ord(currentChar) < ' '.ord
+					if currentChar == "\x03" and lastIndex - i >= 2
+						nextChar = input[i + 1]
+						nextCharValue = nextChar.ord
+						if nextChar == '1'
+							i += 1
+							second_digit = input[i + 1].ord
+							if second_digit >= '0'.ord and second_digit <= '5'.ord
+								i += 1
+							end
+						elsif nextChar == '0'
+							i += 2
+						elsif nextCharValue >= '2'.ord and nextCharValue <= '9'.ord
+							i += 1
+						end
+					end
+				else
+					output += currentChar
+				end
+				i += 1
+			end
+			return output
 		end
 	end
 end
