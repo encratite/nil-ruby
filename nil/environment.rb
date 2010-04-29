@@ -1,5 +1,5 @@
 module Nil
-	def getOS
+	def self.getOS
 		names =
 		{
 			'mswin32' => :windows,
