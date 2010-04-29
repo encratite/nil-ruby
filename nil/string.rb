@@ -18,3 +18,35 @@ class String
 		return pattern.match(self) != nil
 	end
 end
+
+module Nil
+	def self.getSizeString(bytes)
+		factor = 1024.0
+		units =
+		[
+			'bytes',
+			'KiB',
+			'MiB',
+			'GiB',
+			'TiB'
+		]
+		
+		offset = 0
+		while offset < units.size - 1 && bytes >= factor
+			bytes /= factor
+			offset += 1
+		end
+		
+		unit = units[offset]
+		if offset == 0
+			unit = 'byte' if bytes == 1
+			formatString = '%d'
+		else
+			formatString = '%.2f'
+		end
+		
+		output = sprintf("#{formatString} %s", bytes, unit)
+		
+		return output
+	end
+end
