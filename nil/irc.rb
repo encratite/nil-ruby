@@ -26,7 +26,7 @@ module Nil
 	class IRCClient
 		DoNothing = lambda { |*arguments| }
 		
-		attr_writer :onConnecting, :onConnect, :onConnectError, :onConnected, :onDisconnect, :onTimeout, :onLine, :onEntry, :onNickInUse, :onNotice, :onInvite, :onJoin, :onPrivateMessage, :onChannelMessage, :onQuit
+		attr_writer :onConnecting, :onConnect, :onConnectError, :onConnected, :onDisconnect, :onTimeout, :onLine, :onEntry, :onNickInUse, :onNotice, :onInvite, :onJoin, :onPrivateMessage, :onChannelMessage, :onQuit, :onSendLine
 		
 		attr_writer :autoReconnect, :reconnectDelay
 		
@@ -46,6 +46,7 @@ module Nil
 			@onPrivateMessage = DoNothing
 			@onChannelMessage = DoNothing
 			@onQuit = DoNothing
+			@onSendLine = DoNothing
 			
 			@autoReconnect = true
 			@reconnectDelay = 5
@@ -110,7 +111,7 @@ module Nil
 				begin
 					connect
 				rescue IOError
-					raise 'IOError occured'
+					puts 'IOError occured!'
 					@onDisconnect.call
 					if @autoReconnect
 						sleep @reconnectDelay
@@ -140,6 +141,7 @@ module Nil
 		end
 		
 		def sendLine(input)
+			@onSendLine.call(input)
 			@socket.print(input + "\r\n")
 		end
 		
