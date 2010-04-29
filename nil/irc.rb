@@ -57,7 +57,7 @@ module Nil
 			@receiveTimeout = 600
 			@receiveSize = 1024
 			
-			@maximumPingCount = 10
+			@maximumPingCount = 20
 			
 			@nickChangeDelay = 5
 			
