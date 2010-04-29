@@ -11,4 +11,8 @@ module Nil
 		
 		return names[os]
 	end
+	
+	def self.getUser
+		return ENV['USER']
+	end
 end
