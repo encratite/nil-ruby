@@ -4,6 +4,7 @@ module Nil
 			file = File.open(path, 'rb')
 			output = file.read
 			file.close
+			return output
 		rescue Errno::ENOENT
 			return nil
 		end
