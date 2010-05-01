@@ -1,3 +1,5 @@
+require 'nil/environment'
+
 module Nil
 	module Console
 		LightGrey = "\e[0;37m"
@@ -20,4 +22,27 @@ module Nil
 		
 		Normal = "\e[0m"
 	end
+	
+	def self.colouredText(text, colour)
+		#Windows doesn't support terminal colour codes by default
+		return text if getOS == :windows
+		colour = Console.const_get colour
+		return colour + text + Console::Normal
+	end
+	
+	def self.defineConsoleColours
+		output = []
+		Console.constants.each do |symbol|
+			name = symbol.to_s
+			name = name[0].downcase + name[1..-1]
+			functionSymbol = name.to_sym
+			self.send :define_method, functionSymbol do |text|
+				self.colouredText(text, symbol)
+			end
+			output << functionSymbol
+		end
+		return output
+	end
+	
+	self.defineConsoleColours.each { |symbol| module_function symbol }
 end
