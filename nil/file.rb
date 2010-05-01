@@ -38,7 +38,7 @@ module Nil
 			raise StandardError.new 'Unable to match free space pattern' if match == nil
 			return match[1].to_i
 		else
-			data = `df -Pk`.split("\n")
+			data = `df -Pk #{path}`.split("\n")
 			raise StandardError.new 'Invalid line count from df' if data.size != 2
 			data = data[1].split(' ')
 			raise StandardError.new 'Invalid token count from df' if data.size != 6
