@@ -2,6 +2,18 @@ require 'nil/string'
 require 'nil/environment'
 
 module Nil
+	class FileInformation
+		attr_reader :name, :path, :timeAccessed, :timeCreated, :timeModified
+		
+		def initialize(path)
+			@name = File.basename path
+			@path = path
+			@timeAccessed = File.atime(@path).UTC
+			@timeCreated = File.ctime(@path).UTC
+			@timeModified = File.mtime(@path).UTC
+		end
+	end
+	
 	def self.readFile(path)
 		begin
 			file = File.open(path, 'rb')
@@ -55,6 +67,11 @@ module Nil
 			data.reject! do |entry|
 				['.', '..'].include? entry
 			end
+			output = data.map do |entry|
+				entryPath = File.expand_path(entry, path)
+				FileInformation.new entryPath
+			end
+			return output
 		rescue Errno::ENOENT
 			return nil
 		end
