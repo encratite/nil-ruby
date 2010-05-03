@@ -48,4 +48,15 @@ module Nil
 			return output
 		end
 	end
+	
+	def readDirectory(path)
+		begin
+			data = Dir.entries path
+			data.reject! do |entry|
+				['.', '..'].include? entry
+			end
+		rescue Errno::ENOENT
+			return nil
+		end
+	end
 end
