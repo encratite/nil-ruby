@@ -8,9 +8,9 @@ module Nil
 		def initialize(path)
 			@name = File.basename path
 			@path = path
-			@timeAccessed = File.atime(@path).UTC
-			@timeCreated = File.ctime(@path).UTC
-			@timeModified = File.mtime(@path).UTC
+			@timeAccessed = File.atime(@path).utc
+			@timeCreated = File.ctime(@path).utc
+			@timeModified = File.mtime(@path).utc
 		end
 	end
 	
