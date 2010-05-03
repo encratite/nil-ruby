@@ -49,7 +49,7 @@ module Nil
 		end
 	end
 	
-	def readDirectory(path)
+	def self.readDirectory(path)
 		begin
 			data = Dir.entries path
 			data.reject! do |entry|
