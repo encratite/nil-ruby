@@ -76,4 +76,15 @@ module Nil
 			return nil
 		end
 	end
+	
+	def self.joinPaths(*arguments)
+		separator =
+			getOS == :windows ?
+			'\\' :
+			'/'
+			
+		expression = Regexp.new "\\#{separator}+"
+		path = arguments.join(separator).gsub(expression, separator)
+		return path
+	end
 end
