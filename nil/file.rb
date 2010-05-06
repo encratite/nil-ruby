@@ -87,4 +87,27 @@ module Nil
 		path = arguments.join(separator).gsub(expression, separator)
 		return path
 	end
+	
+	def self.symbolicLink(target, link)
+		#if getOS == :windows
+		if false
+			begin
+				arguments = ['mklink']
+				arguments << '/D' if File.directory? target
+				arguments += ["\"#{link}\"", "\"#{target}\""]
+				commandLine = arguments.join ' '
+				puts commandLine
+				output = `#{commandLine}`
+			rescue Errno::ENOENT
+				return false
+			end
+		else
+			begin
+				File.symlink(target, symlink)
+			#rescue NotImplementedError
+			#	return false
+			end
+		end
+		return true
+	end
 end
