@@ -89,25 +89,18 @@ module Nil
 	end
 	
 	def self.symbolicLink(target, link)
-		#if getOS == :windows
-		if false
-			begin
-				arguments = ['mklink']
-				arguments << '/D' if File.directory? target
-				arguments += ["\"#{link}\"", "\"#{target}\""]
-				commandLine = arguments.join ' '
-				puts commandLine
-				output = `#{commandLine}`
-			rescue Errno::ENOENT
-				return false
-			end
+		if getOS == :windows
+			#mklink doesn't work for some reason - wrote a std::system proxy in C++
+			arguments = ['system', 'mklink']
+			arguments << '/D' if File.directory? target
+			arguments += ["\"#{link}\"", "\"#{target}\""]
+			commandLine = arguments.join ' '
+			`#{commandLine}`
+			
+			#GNU ln failed me, too - it simply copies everything, it's insane
+			#`ln -s "#{target}" "#{link}"`
 		else
-			begin
-				File.symlink(target, symlink)
-			#rescue NotImplementedError
-			#	return false
-			end
+			File.symlink(target, link)
 		end
-		return true
 	end
 end
