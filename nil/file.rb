@@ -71,6 +71,9 @@ module Nil
 				entryPath = File.expand_path(entry, path)
 				FileInformation.new entryPath
 			end
+			output = output.sort do |x, y|
+				x.name <=> y.name
+			end
 			return output
 		rescue Errno::ENOENT
 			return nil
