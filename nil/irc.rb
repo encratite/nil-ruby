@@ -26,6 +26,8 @@ module Nil
 	class IRCClient
 		DoNothing = lambda { |*arguments| }
 		
+		attr_reader :nick
+		
 		attr_writer :onConnecting, :onConnect, :onConnectError, :onConnected, :onDisconnect, :onTimeout, :onLine, :onEntry, :onNickInUse, :onNotice, :onInvite, :onJoin, :onPrivateMessage, :onChannelMessage, :onQuit, :onSendLine
 		
 		attr_writer :autoReconnect, :reconnectDelay
@@ -155,8 +157,11 @@ module Nil
 		end
 		
 		def sendMessage(target, text)
-			line = "PRIVMSG #{target} :#{text}"
-			tryToSendLine line
+			tryToSendLine "PRIVMSG #{target} :#{text}"
+		end
+		
+		def joinChannel(channel)
+			tryToSendLine "JOIN #{channel}"
 		end
 		
 		def logIn
