@@ -154,6 +154,11 @@ module Nil
 			end
 		end
 		
+		def sendMessage(target, text)
+			line = "PRIVMSG #{target} :#{text}"
+			tryToSendLine line
+		end
+		
 		def logIn
 			changeNick @nick
 			sendLine "USER #{@user} \"#{@localHost}\" \"#{@host}\" :#{@realName}"
