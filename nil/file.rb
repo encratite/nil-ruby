@@ -61,20 +61,35 @@ module Nil
 		end
 	end
 	
-	def self.readDirectory(path)
+	def self.readDirectory(path, separateDirectoriesAndFiles = false)
 		begin
 			data = Dir.entries path
 			data.reject! do |entry|
 				['.', '..'].include? entry
 			end
+			
 			output = data.map do |entry|
 				entryPath = File.expand_path(entry, path)
 				FileInformation.new entryPath
 			end
+			
 			output = output.sort do |x, y|
 				x.name <=> y.name
 			end
-			return output
+			
+			return output if !separateDirectoriesAndFiles
+			
+			directories = []
+			files = []
+			output.each do |entry|
+				if File.directory?(entry.path)
+					directories << entry
+				else
+					files << entry
+				end
+			end
+			return [directories, files]
+			
 		rescue Errno::ENOENT
 			return nil
 		end
