@@ -8,9 +8,13 @@ module Nil
 		def initialize(path)
 			@name = File.basename path
 			@path = path
-			@timeAccessed = File.atime(@path).utc
-			@timeCreated = File.ctime(@path).utc
-			@timeModified = File.mtime(@path).utc
+			begin
+				#fails on symlinks for some reason
+				@timeAccessed = File.atime(@path).utc
+				@timeCreated = File.ctime(@path).utc
+				@timeModified = File.mtime(@path).utc
+			rescue Errno::ENOENT
+			end
 		end
 	end
 	
