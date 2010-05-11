@@ -114,12 +114,10 @@ module Nil
 					connect
 				rescue IOError
 					puts 'IOError occured!'
-					@onDisconnect.call
-					if @autoReconnect
-						sleep @reconnectDelay
-					else
-						return
-					end
+					reconnect
+				rescue Errno::EPIPE
+					puts 'Broken pipe!'
+					reconnect
 				end
 			end
 		end
@@ -140,6 +138,15 @@ module Nil
 				@onConnectError.call
 			end
 			return nil
+		end
+		
+		def reconnect
+			@onDisconnect.call
+			if @autoReconnect
+				sleep @reconnectDelay
+			else
+				return
+			end
 		end
 		
 		def sendLine(input)
