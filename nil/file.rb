@@ -99,14 +99,20 @@ module Nil
 		end
 	end
 	
+	WindowsSeparator = '\\'
+	UNIXSeparator = '/'
+	
 	Separator =
 		getOS == :windows ?
-		'\\' :
-		'/'
+		WindowsSeparator :
+		UNIXSeparator
 	
 	def self.joinPaths(*arguments)			
 		expression = Regexp.new "\\#{Separator}+"
 		path = arguments.join(Separator).gsub(expression, Separator)
+		if getOS == :windows
+			path = path.gsub(UNIXSeparator, WindowsSeparator)
+		end
 		return path
 	end
 	
