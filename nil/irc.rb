@@ -118,6 +118,9 @@ module Nil
 				rescue Errno::EPIPE
 					puts 'Broken pipe!'
 					reconnect
+				rescue Errno::ECONNRESET
+					puts 'Connection was reset!'
+					reconnect
 				end
 			end
 		end
