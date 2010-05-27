@@ -3,26 +3,25 @@ require 'nil/environment'
 
 module Nil
 	class FileInformation
-		attr_reader :name, :path, :timeAccessed, :timeCreated, :timeModified
+		attr_reader :name, :path, :timeAccessed, :timeCreated, :timeModified, :symlink
 		
 		def initialize(path)
-			@name = File.basename path
+			@name = File.basename(path)
 			@path = path
-			begin
-				#fails on symlinks for some reason
-				@timeAccessed = File.atime(@path).utc
-				@timeCreated = File.ctime(@path).utc
-				@timeModified = File.mtime(@path).utc
-			rescue Errno::ENOENT
+			if File.symlink?(path)
+				data = File.lstat(path)
+			else
+				data = File.stat(path)
 			end
+			@timeAccessed = data.atime.utc
+			@timeCreated = data.ctime.utc
+			@timeModified = data.mtime.utc
 		end
 	end
 	
 	def self.getFileInformation(path)
 		begin
-			data = File.stat(path)
-			output = FileInformation.new(data)
-			return output
+			return FileInformation.new(path)
 		rescue Errno::ENOENT
 			return nil
 		end
@@ -82,9 +81,14 @@ module Nil
 				['.', '..'].include? entry
 			end
 			
-			output = data.map do |entry|
+			output = []
+			data.each do |entry|
 				entryPath = File.expand_path(entry, path)
-				FileInformation.new entryPath
+				info = self.getFileInformation(entryPath)
+				if info == nil
+					raise "Unable to retrieve file information of path #{entryPath}"
+				end
+				output << info
 			end
 			
 			output = output.sort do |x, y|
