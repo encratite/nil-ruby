@@ -18,6 +18,16 @@ module Nil
 		end
 	end
 	
+	def self.getFileInformation(path)
+		begin
+			data = File.stat(path)
+			output = FileInformation.new(data)
+			return output
+		rescue Errno::ENOENT
+			return nil
+		end
+	end
+	
 	def self.readFile(path)
 		begin
 			file = File.open(path, 'rb')
