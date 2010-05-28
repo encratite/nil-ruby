@@ -1,3 +1,5 @@
+require 'socket'
+
 module Nil
 	def self.getOS
 		names =
@@ -16,12 +18,7 @@ module Nil
 		return ENV['USER']
 	end
 	
-	def self.getHost
-		if self.getOS == :windows
-			#this doesn't look right
-			return ENV['USERDOMAIN']
-		else
-			return ENV['HOSTNAME']
-		end
+	def self.getHostname
+		return Socket.gethostname
 	end
 end
