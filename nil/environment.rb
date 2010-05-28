@@ -15,4 +15,13 @@ module Nil
 	def self.getUser
 		return ENV['USER']
 	end
+	
+	def self.getHost
+		if self.getOS == :windows
+			#this doesn't look right
+			return ENV['USERDOMAIN']
+		else
+			return ENV['HOSTNAME']
+		end
+	end
 end
