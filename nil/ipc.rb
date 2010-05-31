@@ -9,16 +9,16 @@ module Nil
 	class IPCServer
 		def initialize(path)
 			if !File.exists?(path)
-				UNIXServer.new(path)
-				File.chmod(0600, path)
+				File.rm(path)
 			end
 			@path = path
-			@methods = []
+			@methods = [:getMethods]
 		end
 		
 		def run
 			buffer = ''
-			server = UNIXSocket.open(@path)
+			server = UNIXServer.new(@path)
+			File.chmod(0600, @path)
 			while true
 				client = server.accept
 				processClient(client)
@@ -70,22 +70,28 @@ module Nil
 					puts "Invalid IPC call object: #{call.class}"
 					return false
 				end
-				if !@methods.include?(call.symbol)
-					puts "Illegal IPC call to non IPC method #{call.symbol}"
-					return false
+				output = nil
+				if @methods.include?(call.symbol)
+					begin
+					function = method(call.symbol)
+					rescue rescue ArgumentError
+						output = IPCError.new("Invalid argument count for method \"#{call.symbol}\"")
+					end
+					output = function(*call.arguments)
+				else
+					output = IPCError.new("Unknown method \"#{call.symbol}\"")
 				end
-				function = method(call.symbol)
-				output = function(*call.arguments)
 				outputData = Marshal.dump(output)
 				client.print(outputData)
 				return true
 			rescue TypeError
 				puts 'Invalid Marshal data'
 				return false
-			rescue ArgumentError
-				puts 'Invalid argument count'
-				return false
 			end
+		end
+		
+		def getMethods
+			return @methods
 		end
 	end
 	
@@ -95,6 +101,40 @@ module Nil
 		def initialize(symbol, arguments)
 			@symbol = symbol
 			@arguments = arguments
+		end
+		
+		def call(client)
+			data = Marshal.dump(self)
+			packet = "#{data.size}:#{data}"
+			client.print(packet)
+			#need to receive the reply here with proper deserialisation
+		end
+	end
+	
+	class IPCError
+		attr_reader :message
+		
+		def initialize(message)
+			@message = message
+		end
+	end
+	
+	class IPCClient
+		def initialize(path)
+			@socket = UNIXSocket.new(path)
+			receiveMethods
+		end
+		
+		def receiveMethods
+			methods = IPCCall.new(:getMethods, []).call(@socket)
+			methods.each do |method|
+				extend Module.new
+					define_method(method) |*arguments|
+						ipc = IPCCall.new(method, arguments)
+						call = ipc.call(@socket)
+					end
+				end
+			end
 		end
 	end
 end
