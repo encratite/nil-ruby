@@ -1,4 +1,5 @@
 require 'socket'
+require 'fileutils'
 
 require 'nil/string'
 
@@ -6,6 +7,23 @@ module Nil
 	module IPCCommunication
 		ReceiveSize = 4 * 1024
 		ReceiveLimit = 100 * ReceiveSize
+		
+		class CommunicationResult
+			attr_accessor :connectionClosed, :value
+			
+			def self.closedResult
+				output = CommunicationResult.new
+				output.connectionClosed = true
+				return output
+			end
+			
+			def self.valueResult(value)
+				output = CommunicationResult.new
+				output.connectionClosed = false
+				output.value = value
+				return output
+			end
+		end
 		
 		def self.bufferErrorCheck(buffer, socket)
 			if buffer.size > ReceiveLimit
@@ -17,6 +35,9 @@ module Nil
 		def self.processUnit(socket, buffer)
 			while true
 				data = socket.recv(ReceiveSize)
+				if data.empty?
+					return CommunicationResult.closedResult
+				end
 				buffer.concat data
 				bufferErrorCheck(buffer, socket)				
 				offset = buffer.index(':')
@@ -27,16 +48,16 @@ module Nil
 					raise IPCError.new("Invalid length string: #{lengthString}")
 				end
 				length = lengthString.to_i
-				buffer = buffer[(ofset + 1)..-1]
+				buffer.replace(buffer[(offset + 1)..-1])
 				while buffer.size < length
 					buffer.concat(socket.recv(ReceiveSize))
 					bufferErrorCheck(buffer, socket)
 				end
 				serialisedData = buffer[0..(length - 1)]
-				buffer = buffer[length..-1]
+				buffer.replace(buffer[length..-1])
 				begin
 					deserialisedData = Marshal.load(serialisedData)
-					return deserialisedData
+					return CommunicationResult.valueResult(deserialisedData)
 				rescue TypeError
 					socket.close
 					raise IPCError.new('Failed to deserialise data')
@@ -53,8 +74,8 @@ module Nil
 	
 	class IPCServer
 		def initialize(path)
-			if !File.exists?(path)
-				File.rm(path)
+			if File.exists?(path)
+				FileUtils.rm(path)
 			end
 			@path = path
 			@methods = [:getMethods]
@@ -73,13 +94,20 @@ module Nil
 			buffer = ''
 			while true
 				begin
-					call = IPCCommunication.processUnit(client, buffer)
-					processData(call, buffer)
+					result = IPCCommunication.processUnit(client, buffer)
+					if result.connectionClosed
+						#puts 'Client closed the connection'
+						return
+					end
+					processData(result.value, client)
 				rescue IPCError => exception
 					puts "An IPC error occured: #{exception.message}"
 					return
 				rescue RuntimeError => exception
 					puts "An error occured while processing deserialised data: #{exception.message}"
+					return
+				rescue Errno::EPIPE
+					puts 'Broken pipe'
 					return
 				end
 			end
@@ -93,8 +121,8 @@ module Nil
 				output = nil
 				begin
 					function = method(call.symbol)
-					output = function(*call.arguments)
-				rescue rescue ArgumentError
+					output = function.call(*(call.arguments))
+				rescue ArgumentError
 					output = IPCError.new("Invalid argument count for method \"#{call.symbol}\"")
 				end
 			else
@@ -116,9 +144,11 @@ module Nil
 			@arguments = arguments
 		end
 		
-		def call(socket)
+		def call(socket, buffer)
 			IPCCommunication.sendData(socket, self)
-			output = IPCCommunication.processUnit(socket, buffer)
+			result = IPCCommunication.processUnit(socket, buffer)
+			raise IPCError.new('The server closed the connection') if result.connectionClosed
+			output = result.value
 			raise output if output.class == IPCError
 			return output
 		end
@@ -135,18 +165,21 @@ module Nil
 	class IPCClient
 		def initialize(path)
 			@socket = UNIXSocket.new(path)
+			@buffer = ''
 			receiveMethods
 		end
 		
 		def receiveMethods
-			methods = IPCCall.new(:getMethods, []).call(@socket)
+			methods = IPCCall.new(:getMethods, []).call(@socket, @buffer)
 			methods.each do |method|
-				extend Module.new
-					define_method(method) |*arguments|
-						ipc = IPCCall.new(method, arguments).call(@socket)
-						return ipc.call(@socket)
+				extend(
+					Module.new do
+						define_method(method) do |*arguments|
+							ipc = IPCCall.new(method, arguments)
+							return ipc.call(@socket, @buffer)
+						end
 					end
-				end
+				)
 			end
 		end
 	end
