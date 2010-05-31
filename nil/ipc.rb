@@ -3,8 +3,53 @@ require 'socket'
 require 'nil/string'
 
 module Nil
-	ReceiveSize = 4 * 1024
-	ReceiveLimit = 100 * ReceiveSize
+	module IPCCommunication
+		ReceiveSize = 4 * 1024
+		ReceiveLimit = 100 * ReceiveSize
+		
+		def self.bufferErrorCheck(buffer, socket)
+			if buffer.size > ReceiveLimit
+				socket.close
+				raise IPCError.new("Buffer size exceeded: #{buffer.size}")
+			end
+		end
+		
+		def self.processUnit(socket, buffer)
+			while true
+				data = socket.recv(ReceiveSize)
+				buffer.concat data
+				bufferErrorCheck(buffer, socket)				
+				offset = buffer.index(':')
+				next if offset == nil
+				lengthString = buffer[0..(offset - 1)]
+				if !lengthString.isNumber
+					socket.close
+					raise IPCError.new("Invalid length string: #{lengthString}")
+				end
+				length = lengthString.to_i
+				buffer = buffer[(ofset + 1)..-1]
+				while buffer.size < length
+					buffer.concat(socket.recv(ReceiveSize))
+					bufferErrorCheck(buffer, socket)
+				end
+				serialisedData = buffer[0..(length - 1)]
+				buffer = buffer[length..-1]
+				begin
+					deserialisedData = Marshal.load(serialisedData)
+					return deserialisedData
+				rescue TypeError
+					socket.close
+					raise IPCError.new('Failed to deserialise data')
+				end
+			end
+		end
+		
+		def self.sendData(socket, input)
+			data = Marshal.dump(input)
+			packet = "#{data.size}:#{data}"
+			socket.print(packet)
+		end
+	end
 	
 	class IPCServer
 		def initialize(path)
@@ -16,7 +61,6 @@ module Nil
 		end
 		
 		def run
-			buffer = ''
 			server = UNIXServer.new(@path)
 			File.chmod(0600, @path)
 			while true
@@ -25,69 +69,38 @@ module Nil
 			end
 		end
 		
-		def bufferError(buffer, client)
-			if buffer.size > ReceiveLimit
-				puts "Buffer size exceeded: #{buffer.size}"
-				client.close
-				return true
-			else
-				return false
-			end
-		end
-		
 		def processClient(client)
+			buffer = ''
 			while true
-				data = client.recv(ReceiveSize)
-				buffer.concat data
-				return if bufferError(buffer, client)				
-				offset = buffer.index(':')
-				next if offset == nil
-				lengthString = buffer[0..(offset - 1)]
-				if !lengthString.isNumber
-					puts "Invalid length string: #{lengthString}"
-					client.close
+				begin
+					call = IPCCommunication.processUnit(client, buffer)
+					processData(call, buffer)
+				rescue IPCError => exception
+					puts "An IPC error occured: #{exception.message}"
 					return
-				end
-				length = lengthString.to_i
-				buffer = buffer[(ofset + 1)..-1]
-				while buffer.size < length
-					buffer.concat(client.recv(ReceiveSize))
-					return if bufferError(buffer, client)
-				end
-				serialisedData = buffer[0..(length - 1)]
-				buffer = buffer[length..-1]
-				if !processData(serialisedData, client)
-					client.close
+				rescue RuntimeError => exception
+					puts "An error occured while processing deserialised data: #{exception.message}"
 					return
 				end
 			end
 		end
 		
-		def processData(input, client)
-			begin
-				call = Marshal.load(input)
-				if call.class != IPCCall
-					puts "Invalid IPC call object: #{call.class}"
-					return false
-				end
-				output = nil
-				if @methods.include?(call.symbol)
-					begin
-					function = method(call.symbol)
-					rescue rescue ArgumentError
-						output = IPCError.new("Invalid argument count for method \"#{call.symbol}\"")
-					end
-					output = function(*call.arguments)
-				else
-					output = IPCError.new("Unknown method \"#{call.symbol}\"")
-				end
-				outputData = Marshal.dump(output)
-				client.print(outputData)
-				return true
-			rescue TypeError
-				puts 'Invalid Marshal data'
-				return false
+		def processData(call, client)
+			if call.class != IPCCall
+				raise "Invalid IPC call object: #{call.class}"
 			end
+			if @methods.include?(call.symbol)
+				output = nil
+				begin
+					function = method(call.symbol)
+					output = function(*call.arguments)
+				rescue rescue ArgumentError
+					output = IPCError.new("Invalid argument count for method \"#{call.symbol}\"")
+				end
+			else
+				output = IPCError.new("Unknown method \"#{call.symbol}\"")
+			end
+			IPCCommunication.sendData(client, output)
 		end
 		
 		def getMethods
@@ -103,11 +116,11 @@ module Nil
 			@arguments = arguments
 		end
 		
-		def call(client)
-			data = Marshal.dump(self)
-			packet = "#{data.size}:#{data}"
-			client.print(packet)
-			#need to receive the reply here with proper deserialisation
+		def call(socket)
+			IPCCommunication.sendData(socket, self)
+			output = IPCCommunication.processUnit(socket, buffer)
+			raise output if output.class == IPCError
+			return output
 		end
 	end
 	
@@ -130,8 +143,8 @@ module Nil
 			methods.each do |method|
 				extend Module.new
 					define_method(method) |*arguments|
-						ipc = IPCCall.new(method, arguments)
-						call = ipc.call(@socket)
+						ipc = IPCCall.new(method, arguments).call(@socket)
+						return ipc.call(@socket)
 					end
 				end
 			end
