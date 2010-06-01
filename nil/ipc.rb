@@ -73,6 +73,9 @@ module Nil
 	end
 	
 	class IPCServer
+		class InvalidCall < RuntimeError
+		end
+
 		def initialize(path)
 			if File.exists?(path)
 				FileUtils.rm(path)
@@ -101,10 +104,10 @@ module Nil
 					end
 					processData(result.value, client)
 				rescue IPCError => exception
-					puts "An IPC error occured: #{exception.message}"
+					puts "An IPC error occurred: #{exception.message}"
 					return
-				rescue RuntimeError => exception
-					puts "An error occured while processing deserialised data: #{exception.message}"
+				rescue InvalidCall => exception
+					puts exception.message
 					return
 				rescue Errno::EPIPE
 					puts 'Broken pipe'
@@ -115,7 +118,8 @@ module Nil
 		
 		def processData(call, client)
 			if call.class != IPCCall
-				raise "Invalid IPC call object: #{call.class}"
+				client.close
+				raise InvalidCall.new("Invalid IPC call object: #{call.class}")
 			end
 			if @methods.include?(call.symbol)
 				output = nil
@@ -154,12 +158,7 @@ module Nil
 		end
 	end
 	
-	class IPCError
-		attr_reader :message
-		
-		def initialize(message)
-			@message = message
-		end
+	class IPCError < RuntimeError
 	end
 	
 	class IPCClient
