@@ -82,6 +82,8 @@ module Nil
 			end
 			@path = path
 			@methods = [:getMethods]
+			
+			Thread.abort_on_exception = true
 		end
 		
 		def run
@@ -89,7 +91,9 @@ module Nil
 			File.chmod(0600, @path)
 			while true
 				client = server.accept
-				processClient(client)
+				Thread.new do
+					processClient(client)
+				end
 			end
 		end
 		
