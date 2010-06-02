@@ -113,13 +113,16 @@ module Nil
 				begin
 					connect
 				rescue IOError
-					puts 'IOError occured!'
+					puts 'IOError occurred!'
 					reconnect
 				rescue Errno::EPIPE
 					puts 'Broken pipe!'
 					reconnect
 				rescue Errno::ECONNRESET
 					puts 'Connection was reset!'
+					reconnect
+				rescue SocketError
+					puts 'Socket error occurred!'
 					reconnect
 				end
 			end
