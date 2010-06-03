@@ -48,7 +48,7 @@ module Nil
 			communication = IPCCommunication.new(client)
 			while true
 				begin
-					result = communication.processUnit
+					result = communication.receiveData
 					if result.connectionClosed
 						#puts 'Client closed the connection'
 						return
@@ -112,7 +112,7 @@ module Nil
 		def performCall(method, arguments)
 			call = IPCCall.new(method, arguments)
 			sendData(call)
-			result = processUnit
+			result = receiveData
 			raise IPCError.new('The server closed the connection') if result.connectionClosed
 			output = result.value
 			raise output if output.class == IPCError

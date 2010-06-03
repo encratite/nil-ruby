@@ -38,7 +38,7 @@ module Nil
 			end
 		end
 		
-		def processUnit
+		def receiveData
 			while true
 				data = @socket.recv(ReceiveSize)
 				if data.empty?
