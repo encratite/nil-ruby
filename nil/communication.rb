@@ -2,8 +2,9 @@ module Nil
 	class SerialisedCommunication
 		attr_reader :socket
 		
-		ReceiveSize = 4 * 1024
-		ReceiveLimit = 100 * ReceiveSize
+		#ReceiveSize = 4 * 1024
+		ReceiveSize = 1
+		ReceiveLimit = 100 * 1024
 		
 		class CommunicationError < Exception
 		end
@@ -40,8 +41,8 @@ module Nil
 		
 		def receiveData
 			while true
-				data = @socket.recv(ReceiveSize)
-				if data.empty?
+				data = @socket.read(ReceiveSize)
+				if data == nil || data.empty?
 					return CommunicationResult.closedResult
 				end
 				@buffer.concat data
@@ -56,9 +57,10 @@ module Nil
 				length = lengthString.to_i
 				@buffer.replace(@buffer[(offset + 1)..-1])
 				while @buffer.size < length
-					@buffer.concat(@socket.recv(ReceiveSize))
+					@buffer.concat(@socket.read(ReceiveSize))
 					bufferErrorCheck
 				end
+				#puts "Received: #{@buffer}"
 				serialisedData = @buffer[0..(length - 1)]
 				@buffer.replace(@buffer[length..-1])
 				begin
@@ -75,6 +77,7 @@ module Nil
 			data = serialiseData(input)
 			packet = "#{data.size}:#{data}"
 			@socket.print(packet)
+			#puts "Sent: #{packet}"
 		end
 		
 		def serialiseData(input)
