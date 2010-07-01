@@ -41,8 +41,13 @@ module Nil
 		
 		def receiveData
 			while true
-				data = @socket.read(ReceiveSize)
-				if data == nil || data.empty?
+				begin
+					data = @socket.read(ReceiveSize)
+					if data == nil || data.empty?
+						return CommunicationResult.closedResult
+					end
+				rescue SystemCallError
+					#ECONNRESET etc
 					return CommunicationResult.closedResult
 				end
 				@buffer.concat data
@@ -60,23 +65,30 @@ module Nil
 					@buffer.concat(@socket.read(ReceiveSize))
 					bufferErrorCheck
 				end
+				#debugging
 				#puts "Received: #{@buffer}"
 				serialisedData = @buffer[0..(length - 1)]
 				@buffer.replace(@buffer[length..-1])
 				begin
 					deserialisedData = deserialiseData(serialisedData)
 					return CommunicationResult.valueResult(deserialisedData)
-				rescue @exception
+				rescue @exception => error
 					@socket.close
-					raise CommunicationError.new('Failed to deserialise data')
+					raise CommunicationError.new("Failed to deserialise data (#{serialisedData}): #{error.message}")
 				end
 			end
 		end
 		
 		def sendData(input)
+			#puts "Send input: #{input} (#{input.class})"
 			data = serialiseData(input)
 			packet = "#{data.size}:#{data}"
-			@socket.print(packet)
+			begin
+				@socket.print(packet)
+			rescue SystemCallError
+				return
+			end
+			#debugging
 			#puts "Sent: #{packet}"
 		end
 		
