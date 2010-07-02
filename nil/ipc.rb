@@ -33,9 +33,13 @@ module Nil
 			Thread.abort_on_exception = true
 		end
 		
+		def socketHook
+			File.chmod(0600, @path)
+		end
+		
 		def run
 			server = UNIXServer.new(@path)
-			File.chmod(0600, @path)
+			socketHook
 			while true
 				client = server.accept
 				Thread.new do
@@ -134,15 +138,6 @@ module Nil
 						end
 					end
 				)
-			end
-		end
-		
-		def self.create(path)
-			begin
-				output = IPCClient.new(path)
-				return output
-			rescue IPCError
-				return nil
 			end
 		end
 	end
