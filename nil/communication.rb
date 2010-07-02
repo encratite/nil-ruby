@@ -46,7 +46,7 @@ module Nil
 					if data == nil || data.empty?
 						return CommunicationResult.closedResult
 					end
-				rescue SystemCallError
+				rescue SystemCallError, IOError
 					#ECONNRESET etc
 					return CommunicationResult.closedResult
 				end
@@ -85,7 +85,7 @@ module Nil
 			packet = "#{data.size}:#{data}"
 			begin
 				@socket.print(packet)
-			rescue SystemCallError
+			rescue SystemCallError, IOError
 				return
 			end
 			#debugging
