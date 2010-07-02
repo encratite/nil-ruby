@@ -107,8 +107,9 @@ module Nil
 		def initialize(path)
 			begin
 				super(UNIXSocket.new(path))
-			rescue SystemCallError
-				raise IPCError.new("Connection refused on socket #{path}")
+			rescue SystemCallError => exception
+				#raise IPCError.new("Connection refused on socket #{path}")
+				raise IPCError.new(exception.message)
 			end
 			receiveMethods
 		end
