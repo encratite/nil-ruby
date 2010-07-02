@@ -105,7 +105,11 @@ module Nil
 	
 	class IPCClient < IPCCommunication
 		def initialize(path)
-			super(UNIXSocket.new(path))
+			begin
+				super(UNIXSocket.new(path))
+			rescue SystemCallError
+				raise IPCError.new("Connection refused on socket #{path}")
+			end
 			receiveMethods
 		end
 		
@@ -129,6 +133,15 @@ module Nil
 						end
 					end
 				)
+			end
+		end
+		
+		def self.create(path)
+			begin
+				output = IPCClient.new(path)
+				return output
+			rescue IPCError
+				return nil
 			end
 		end
 	end
