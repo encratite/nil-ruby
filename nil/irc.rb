@@ -115,11 +115,7 @@ module Nil
 				rescue IOError
 					puts 'IOError occurred!'
 					reconnect
-				rescue Errno::EPIPE
-					puts 'Broken pipe!'
-					reconnect
-				rescue Errno::ECONNRESET
-					puts 'Connection was reset!'
+				rescue SysCallError
 					reconnect
 				rescue SocketError
 					puts 'Socket error occurred!'
@@ -138,9 +134,7 @@ module Nil
 				@reclaimingNick = false
 				logIn
 				runReader
-			rescue Errno::ECONNREFUSED
-				@onConnectError.call
-			rescue Errno::ETIMEDOUT
+			rescue SysCallError
 				@onConnectError.call
 			end
 			return nil
