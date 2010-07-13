@@ -115,7 +115,7 @@ module Nil
 				rescue IOError
 					puts 'IOError occurred!'
 					reconnect
-				rescue SysCallError
+				rescue SystemCallError
 					reconnect
 				rescue SocketError
 					puts 'Socket error occurred!'
@@ -134,7 +134,7 @@ module Nil
 				@reclaimingNick = false
 				logIn
 				runReader
-			rescue SysCallError
+			rescue SystemCallError
 				@onConnectError.call
 			end
 			return nil
