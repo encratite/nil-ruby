@@ -49,12 +49,13 @@ module Nil
 		end
 		
 		def processClient(client)
+			puts "New IPC client: #{client.inspect}"
 			communication = IPCCommunication.new(client)
 			while true
 				begin
 					result = communication.receiveData
 					if result.connectionClosed
-						#puts 'Client closed the connection'
+						puts "IPC client closed the connection: #{client.inspect}"
 						return
 					end
 					processData(result.value, communication)
