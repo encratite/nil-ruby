@@ -1,6 +1,6 @@
 require 'socket'
 require 'timeout'
-require 'nil/random'
+require_relative 'random'
 
 module Nil
 	class IRCUser

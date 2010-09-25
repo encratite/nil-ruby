@@ -1,5 +1,5 @@
-require 'nil/string'
-require 'nil/environment'
+require_relative 'string'
+require_relative 'environment'
 
 module Nil
 	class FileInformation

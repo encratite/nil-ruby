@@ -60,4 +60,20 @@ module Nil
 			end
 		end
 	end
+	
+	def self.httpDownload(url)
+		pattern = /(.+?):\/\/([^\/]+)(\/.+)/
+		match = pattern.match(url)
+		if match == nil
+			raise 'Invalid URL specified'
+		end
+		protocol = match[1]
+		server = match[2]
+		path = match[3]
+		if protocol != 'http'
+			raise 'Unsupported protocol'
+		end
+		client = HTTP.new(server)
+		return client.get(path)
+	end
 end

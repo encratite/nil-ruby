@@ -1,4 +1,4 @@
-require 'nil/environment'
+require_relative 'environment'
 
 module Nil
 	module Console
@@ -45,4 +45,57 @@ module Nil
 	end
 	
 	self.defineConsoleColours.each { |symbol| module_function symbol }
+	
+	class ColumnBreadthManager
+		def initialize
+			@columnSizes = {}
+			@lastColumn = 0
+		end
+		
+		def process(columnIndex, string)
+			value = @columnSizes[columnIndex]
+			if value == nil
+				newValue = string.size
+			else
+				newValue = [value, string.size].max
+			end
+			@columnSizes[columnIndex] = newValue
+			@lastColumn = [columnIndex, @lastColumn].max
+		end
+		
+		def get(columnIndex)
+			return [@columnSizes[columnIndex], columnIndex == @lastColumn]
+		end
+	end
+	
+	class RowOperator
+		def initialize(rows)
+			@rows = rows
+		end
+		
+		def operate(&block)
+			@rows.each do |row|
+				offset = 0
+				row.each do |column|
+					block.call(offset, column)
+					offset += 1
+				end
+			end
+		end
+	end
+	
+	def self.printTable(rows)
+		minimumDistance = 4
+		columns = ColumnBreadthManager.new
+		rowOperator = RowOperator.new(rows)
+		rowOperator.operate do |offset, column|
+			columns.process(offset, column)
+		end
+		rowOperator.operate do |offset, column|
+			size, isLast = columns.get(offset)
+			string = column + (' ' * (minimumDistance + size - column.size))
+			print string
+			print "\n" if isLast
+		end
+	end
 end

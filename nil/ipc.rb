@@ -1,8 +1,8 @@
 require 'socket'
 require 'fileutils'
 
-require 'nil/string'
-require 'nil/communication'
+require_relative 'string'
+require_relative 'communication'
 
 module Nil
 	class IPCCommunication < SerialisedCommunication
