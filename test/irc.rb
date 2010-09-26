@@ -12,9 +12,10 @@ def getTestClient
 	realName = nick
 
 	client = Nil::IRCClient.new
-	client.setServer(server)
+	client.setServer(server, 7000)
 	client.setUser(nick, user, localHost, realName)
 	client.onLine = method(:onLine)
+	client.ssl = true
 	client.start
 	
 	return client

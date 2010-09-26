@@ -1,5 +1,7 @@
 require 'socket'
+require 'openssl'
 require 'timeout'
+
 require_relative 'random'
 
 module Nil
@@ -32,6 +34,8 @@ module Nil
 		
 		attr_writer :autoReconnect, :reconnectDelay
 		
+		attr_writer :ssl
+		
 		def initialize
 			@onConnecting = DoNothing
 			@onConnect = DoNothing
@@ -55,6 +59,8 @@ module Nil
 			
 			@gotServer = false
 			@gotUser = false
+			
+			@ssl = false
 			
 			@receiveTimeout = 600
 			@receiveSize = 1024
@@ -128,6 +134,13 @@ module Nil
 			begin
 				@onConnecting.call
 				@socket = TCPSocket.open(@host, @port)
+				
+				if @ssl
+					@socket = OpenSSL::SSL::SSLSocket.new(@socket)
+					@socket.sync_close = true
+					@socket.connect
+				end
+
 				@onConnected.call
 				@pingCounter = 0
 				@buffer = ''
@@ -190,7 +203,11 @@ module Nil
 		def receiveData
 			begin
 				timeout(@receiveTimeout) do
-					data = @socket.recv(@receiveSize)
+					if @socket.class == TCPSocket
+						data = @socket.recv(@receiveSize)
+					else
+						data = @socket.read(@receiveSize)
+					end
 					forceDisconnect if data.empty?
 					@buffer.concat(data)
 				end
