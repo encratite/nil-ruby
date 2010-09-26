@@ -247,12 +247,12 @@ module Nil
 				tokens << line[(offset + 1)..-1]
 			end
 			
-			processCommand tokens
+			processCommand(tokens, line)
 		end
 		
-		def processCommand(tokens)
-			if tokens[0] && tokens.size == 2
-				sendLine "PONG #{tokens[1]}"
+		def processCommand(tokens, line)
+			if tokens[0] == 'PING' && tokens.size == 2
+				sendLine "PONG #{line[5..-1]}"
 				@pingCounter += 1
 				forceDisconnect if @maximumPingCount != nil && @pingCounter >= @maximumPingCount
 				return
