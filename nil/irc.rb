@@ -206,7 +206,7 @@ module Nil
 					if @socket.class == TCPSocket
 						data = @socket.recv(@receiveSize)
 					else
-						data = @socket.read(@receiveSize)
+						data = @socket.readpartial(@receiveSize)
 					end
 					forceDisconnect if data.empty?
 					@buffer.concat(data)
