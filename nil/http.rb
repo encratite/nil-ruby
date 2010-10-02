@@ -2,8 +2,9 @@ require 'net/http'
 
 module Nil
 	class HTTP
+		attr_accessor :ssl
 		def initialize(server, cookieHash = {})
-			@http = Net::HTTP.new(server)
+			@http = nil
 			
 			cookies = []
 			cookieHash.each do |key, value|
@@ -21,17 +22,35 @@ module Nil
 				'Accept-Charset' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
 				'Cookie' => cookies
 			}
+			
+			@ssl = false
+			@port = nil
+			@server = server
 		end
 		
 		def get(path)
+			if @http == nil
+				if @ssl
+					defaultPort = 443
+				else
+					defaultPort = 80					
+				end
+				@port = defaultPort if @port == nil
+				@http = Net::HTTP.new(@server, @port)
+				if @ssl
+					@http.use_ssl = true
+					@http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+				end
+			end
+			
 			begin
 				@http.request_get(path, @headers) do |response|
 					response.value
 					return response.read_body
 				end
-			rescue Net::HTTPError
+			rescue Net::HTTPError => exception
 				return nil
-			rescue
+			rescue => exception
 				return nil
 			end
 		end
