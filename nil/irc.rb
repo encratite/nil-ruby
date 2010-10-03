@@ -147,6 +147,9 @@ module Nil
 				@reclaimingNick = false
 				logIn
 				runReader
+			rescue OpenSSL::SSL::SSLError => exception
+				puts "SSL error: #{exception.inspect}"
+				@onConnectError.call
 			rescue SystemCallError
 				@onConnectError.call
 			end
