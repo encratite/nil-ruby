@@ -28,7 +28,7 @@ module Nil
 			@server = server
 		end
 		
-		def get(path)
+		def httpInitialisation
 			if @http == nil
 				if @ssl
 					defaultPort = 443
@@ -42,20 +42,25 @@ module Nil
 					@http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 				end
 			end
+		end
+		
+		def get(path)
+			httpInitialisation
 			
 			begin
 				@http.request_get(path, @headers) do |response|
 					response.value
 					return response.read_body
 				end
-			rescue Net::HTTPError => exception
-				return nil
-			rescue => exception
+			rescue SystemCallError, Net::ProtocolError => exception
+				puts "GET exception: #{exception.inspect}"
 				return nil
 			end
 		end
 		
 		def post(path, input)
+			httpInitialisation
+			
 			data = input.map { |key, value| "#{key}=#{value}" }
 			postData = data.join '&'
 			begin
@@ -63,18 +68,8 @@ module Nil
 					response.value
 					return response.read_body
 				end
-			rescue Net::HTTPError
-				return nil
-				
-			rescue Errno::ETIMEDOUT
-				return nil
-				
-			rescue Errno::ECONNRESET
-				return nil
-				
-			rescue Net::HTTPFatalError
-				return nil
-			rescue
+			rescue SystemCallError, Net::ProtocolError => exception
+				puts "POST exception: #{exception.inspect}"
 				return nil
 			end
 		end
