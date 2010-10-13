@@ -52,7 +52,7 @@ module Nil
 					response.value
 					return response.read_body
 				end
-			rescue SystemCallError, Net::ProtocolError, RuntimeError => exception
+			rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError => exception
 				puts "GET exception: #{exception.inspect}"
 				return nil
 			end
@@ -68,7 +68,7 @@ module Nil
 					response.value
 					return response.read_body
 				end
-			rescue SystemCallError, Net::ProtocolError, RuntimeError => exception
+			rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError => exception
 				puts "POST exception: #{exception.inspect}"
 				return nil
 			end
