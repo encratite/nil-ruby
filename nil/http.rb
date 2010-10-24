@@ -77,7 +77,7 @@ module Nil
 		end
 	end
 	
-	def self.httpDownload(url)
+	def self.httpDownload(url, cookieHash = {})
 		pattern = /(.+?):\/\/([^\/]+)(\/.+)/
 		match = pattern.match(url)
 		if match == nil
@@ -86,10 +86,14 @@ module Nil
 		protocol = match[1]
 		server = match[2]
 		path = match[3]
-		if protocol != 'http'
+		case protocol
+		when 'http'
+		when 'https'
+			client.ssl = true
+		else
 			raise 'Unsupported protocol'
 		end
-		client = HTTP.new(server)
+		client = HTTP.new(server, cookieHash)
 		return client.get(path)
 	end
 end
