@@ -1,3 +1,4 @@
+require 'cgi'
 require 'net/http'
 
 module Nil
@@ -8,6 +9,7 @@ module Nil
 			
 			cookies = []
 			cookieHash.each do |key, value|
+				value = CGI.escape(value)
 				cookies << "#{key}=#{value}"
 			end
 			

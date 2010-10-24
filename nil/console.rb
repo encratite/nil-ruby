@@ -1,6 +1,10 @@
+require 'thread'
+
 require_relative 'environment'
 
 module Nil
+	ConsoleMutex = Mutex.new
+	
 	module Console
 		LightGrey = "\e[0;37m"
 		LightRed = "\e[1;31m"
@@ -97,5 +101,9 @@ module Nil
 			print string
 			print "\n" if isLast
 		end
+	end
+	
+	def self.threadPrint(message)
+		ConsoleMutex.synchronize { puts message }
 	end
 end
