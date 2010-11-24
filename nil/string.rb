@@ -17,6 +17,13 @@ class String
 		pattern = /^-?((0|[1-9]\d*)(\.\d*)?|\.\d+)$/
 		return pattern.match(self) != nil
 	end
+
+	def matchLeft(input)
+		return false if input.size > size
+		retun true if input.empty?
+		substring = self[0..input.size - 1]
+		return substring == input
+	end
 end
 
 module Nil
