@@ -50,10 +50,8 @@ module Nil
 			httpInitialisation
 			
 			begin
-				@http.request_get(path, @headers) do |response|
-					response.value
-					return response.read_body
-				end
+				response = @http.request_get(path, @headers)
+				return response.body
 			rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError, SocketError => exception
 				puts "GET exception: #{exception.inspect}"
 				return nil
