@@ -36,6 +36,7 @@ end
 
 module Nil
 	def self.getSizeString(bytes)
+		return '1 byte' if bytes == 1
 		factor = 1024.0
 		units =
 		[
