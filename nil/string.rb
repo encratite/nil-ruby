@@ -24,6 +24,14 @@ class String
 		substring = self[0..input.size - 1]
 		return substring == input
 	end
+
+	def matchRight(input)
+		return false if input.size > size
+		return true if input.empty?
+		substring = self[size - input.size..-1]
+
+		return substring == input
+	end
 end
 
 module Nil
