@@ -32,6 +32,14 @@ class String
 
     return substring == input
   end
+
+  def substring(offset, length)
+    if offset < 0 || offset + length >= size || offset < 0 || length < 0
+      raise "Invalid substring arguments (offset #{offset}, length #{length})"
+    end
+    return '' if length == 0
+    return this[offset..offset + length - 1]
+  end
 end
 
 module Nil
