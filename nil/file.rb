@@ -41,6 +41,7 @@ module Nil
   def self.readLines(path)
     data = readFile path
     return nil if data == nil
+    data = data.gsub("\r", '')
     return data.split "\n"
   end
 
