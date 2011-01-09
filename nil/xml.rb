@@ -35,7 +35,7 @@ module Nil
       end
       output = ''
       string.each_char do |char|
-        if !['&', '<', '>'].include?(char) && (' '..'~').include?(char)
+        if !['&', '<', '>', '"'].include?(char) && (' '..'~').include?(char)
           output += char
         else
           output += "&##{char.ord};"
@@ -45,7 +45,7 @@ module Nil
     end
 
     def getCDATAString(input)
-      intro = '<![CDATA'
+      intro = '<![CDATA['
       outro = ']]>'
       content = input.gsub(outro, outro[0..-2] + intro + outro[-1])
       return "\n#{intro}\n#{content}#{outro}\n"
