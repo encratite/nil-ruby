@@ -59,6 +59,7 @@ module Nil
         [
          '<',
          '>',
+         "\n",
         ]
       illegalStrings.each do |string|
         if @content.index(string) != nil
@@ -100,7 +101,10 @@ module Nil
             node.serialise(tabLevel + 1)
           end.join('')
         end
-        outro = "#{tabs}</#{name}>\n"
+        outro = "</#{name}>\n"
+        if content.index("\n") != nil
+          outro = tabs + outro
+        end
         output = intro + content + outro
         return output
       end
