@@ -69,6 +69,10 @@ module Nil
       return @content
     end
 
+    def serialiseDocument(header = '')
+      return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n#{header}" + serialise
+    end
+
     def serialise(tabLevel = 0)
       if @ignored == nil
         raise "Attempted to serialise an uninitialised XMLObject: #{inspect}\nDid you forget to call super in a custom constructor?"
