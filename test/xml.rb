@@ -1,9 +1,6 @@
 require 'nil/xml'
 
 class Root < Nil::XMLObject
-  def initialize
-    super
-  end
 end
 
 class Child < Nil::XMLObject

@@ -1,8 +1,8 @@
 module Nil
   class XMLObject
-    def initialize
+    def initialize(content = nil)
       @overrideName = nil
-      @content = nil
+      @content = content
       @ignored = [:@overrideName, :@content, :@ignored]
     end
 
@@ -30,6 +30,9 @@ module Nil
     end
 
     def attributifyString(string)
+      if !(String === string)
+        raise "Invalid attribute value: #{string.inspect}\nIn object: #{inspect}"
+      end
       output = ''
       string.each_char do |char|
         if !['&', '<', '>'].include?(char) && (' '..'~').include?(char)
@@ -45,7 +48,7 @@ module Nil
       intro = '<![CDATA'
       outro = ']]>'
       content = input.gsub(outro, outro[0..-2] + intro + outro[-1])
-      return "#{intro}\n#{content}#{outro}\n"
+      return "\n#{intro}\n#{content}#{outro}\n"
     end
 
     def getStringContent
@@ -65,7 +68,10 @@ module Nil
       return @content
     end
 
-    def serialise
+    def serialise(tabLevel = 0)
+      if @ignored == nil
+        raise "Attempted to serialise an uninitialised XMLObject: #{inspect}\nDid you forget to call super in a custom constructor?"
+      end
       attributes = {}
       instance_variables.each do |symbol|
         next if @ignored.include?(symbol)
@@ -80,19 +86,21 @@ module Nil
       if @overrideName != nil
         name = @overrideName
       end
+      tabWidth = 2
+      tabs = (' ' * tabWidth) * tabLevel
       if @content == nil
-        return "<#{name}#{attributeString} />\n"
+        return "#{tabs}<#{name}#{attributeString} />\n"
       else
-        intro = "<#{name}#{attributeString}>"
+        intro = "#{tabs}<#{name}#{attributeString}>"
         if String === @content
           content = getStringContent
         else
           intro += "\n"
           content = @content.map do |node|
-            node.serialise
+            node.serialise(tabLevel + 1)
           end.join('')
         end
-        outro = "</#{name}>\n"
+        outro = "#{tabs}</#{name}>\n"
         output = intro + content + outro
         return output
       end
