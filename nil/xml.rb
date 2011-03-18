@@ -1,5 +1,7 @@
 module Nil
   class XMLObject
+    attr_reader :content
+
     def initialize(content = nil)
       @overrideName = nil
       @content = content
