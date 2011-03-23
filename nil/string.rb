@@ -32,6 +32,16 @@ class String
 
     return substring == input
   end
+
+  def searchAndReplace(target, replacement)
+    output = dup
+    offset = output.index(target)
+    while offset != nil
+      output = output[0..offset - 1] + replacement + output[offset + target.size..-1]
+      offset = output.index(target, offset + replacement.size)
+    end
+    return output
+  end
 end
 
 module Nil
