@@ -31,8 +31,6 @@ module Nil
         'Accept-Charset' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
         'Cookie' => cookieString
       }
-
-      #puts "Cookies used: #{cookieString.inspect}"
     end
 
     def httpInitialisation
@@ -84,7 +82,6 @@ module Nil
         name = match[1]
         value = CGI.unescape(match[2])
         @cookies[name] = value
-        #puts "Added a new cookie: #{name.inspect} => #{value.inspect}"
       end
     end
 
@@ -94,8 +91,6 @@ module Nil
       postData = getPostData(input)
       begin
         @http.request_post(path, postData, @headers) do |response|
-          #puts "Location: #{response.header['location'].inspect}"
-          #puts "Set-Cookie: #{response.header['set-cookie'].inspect}"
           processResponse(response)
           response.value
           return response.read_body
@@ -104,15 +99,6 @@ module Nil
         puts "POST exception: #{exception.inspect}"
         return nil
       end
-    end
-
-    def redirectPost(path, input)
-      httpInitialisation
-      postData = getPostData(input)
-      response, body = @http.post(path, postData, @headers)
-      puts response.class
-      puts response.methods.inspect
-      return body
     end
   end
 
