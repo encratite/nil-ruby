@@ -1,19 +1,26 @@
 require 'cgi'
 require 'net/http'
+require 'uri'
 
 module Nil
   class HTTP
     attr_accessor :ssl
-    def initialize(server, cookieHash = {})
+    def initialize(server, cookies = {})
       @http = nil
+      @cookies = cookies
+      @ssl = false
+      @port = nil
+      @server = server
+    end
 
-      cookies = []
-      cookieHash.each do |key, value|
+    def setHeaders
+      cookieArray = []
+      @cookies.each do |key, value|
         value = CGI.escape(value)
-        cookies << "#{key}=#{value}"
+        cookieArray << "#{key}=#{value}"
       end
 
-      cookies = cookies.join('; ')
+      cookieString = cookieArray.join('; ')
 
       @headers =
         {
@@ -22,12 +29,10 @@ module Nil
         'Accept-Language' => 'en-us,en;q=0.5',
         #'Accept-Encoding' => 'gzip,deflate',
         'Accept-Charset' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-        'Cookie' => cookies
+        'Cookie' => cookieString
       }
 
-      @ssl = false
-      @port = nil
-      @server = server
+      #puts "Cookies used: #{cookieString.inspect}"
     end
 
     def httpInitialisation
@@ -44,6 +49,7 @@ module Nil
           @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
       end
+      setHeaders
     end
 
     def get(path)
@@ -51,6 +57,7 @@ module Nil
 
       begin
         response = @http.request_get(path, @headers)
+        processResponse(response)
         return response.body
       rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError, SocketError => exception
         puts "GET exception: #{exception.inspect}"
@@ -58,13 +65,38 @@ module Nil
       end
     end
 
+    def getPostData(input)
+      data = input.map do |key, value|
+        escapedValue = URI.escape(value)
+        "#{key}=#{escapedValue}"
+      end
+      postData = data.join '&'
+      return postData
+    end
+
+    def processResponse(response)
+      setCookie = response.header['set-cookie']
+      if setCookie != nil
+        match = setCookie.match(/^(.+?)=(.+?);/)
+        if match == nil
+          raise "Invalid Set-Cookie field: #{setCookie.inspect}"
+        end
+        name = match[1]
+        value = CGI.unescape(match[2])
+        @cookies[name] = value
+        #puts "Added a new cookie: #{name.inspect} => #{value.inspect}"
+      end
+    end
+
     def post(path, input)
       httpInitialisation
 
-      data = input.map { |key, value| "#{key}=#{value}" }
-      postData = data.join '&'
+      postData = getPostData(input)
       begin
         @http.request_post(path, postData, @headers) do |response|
+          #puts "Location: #{response.header['location'].inspect}"
+          #puts "Set-Cookie: #{response.header['set-cookie'].inspect}"
+          processResponse(response)
           response.value
           return response.read_body
         end
@@ -72,6 +104,15 @@ module Nil
         puts "POST exception: #{exception.inspect}"
         return nil
       end
+    end
+
+    def redirectPost(path, input)
+      httpInitialisation
+      postData = getPostData(input)
+      response, body = @http.post(path, postData, @headers)
+      puts response.class
+      puts response.methods.inspect
+      return body
     end
   end
 
