@@ -111,6 +111,7 @@ module Nil
     protocol = match[1]
     server = match[2]
     path = match[3]
+    client = HTTP.new(server, cookieHash)
     case protocol
     when 'http'
     when 'https'
@@ -118,7 +119,6 @@ module Nil
     else
       raise 'Unsupported protocol'
     end
-    client = HTTP.new(server, cookieHash)
     return client.get(path)
   end
 end
