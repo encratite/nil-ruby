@@ -14,7 +14,7 @@ module Nil
       @sourceFiles = []
       @libraries = []
 
-      @pic = False
+      @pic = false
 
       @outputDirectory = 'output'
       @objectDirectory = 'object'
@@ -23,7 +23,7 @@ module Nil
 
       @threads = 1
 
-      source('source')
+      sources('source')
 
       @mutex = Mutex.new
     end
@@ -32,16 +32,17 @@ module Nil
       @includeDirectories << directory
     end
 
-    def source(directory)
+    def sources(directory)
       contents = Nil.readDirectory(directory, true)
       if contents == nil
         raise "Unable to read #{directory}"
       end
       directories, files = contents
-      sourceFiles = files.reject do |name|
-        Nil.getExtension(name) != CPlusPlusExtension
+      paths = files.map { |x| x.path }
+      sourceFiles = paths.reject do |path|
+        Nil.getExtension(path) != CPlusPlusExtension
       end
-      @sourceFiles += files
+      @sourceFiles += sourceFiles
     end
 
     def library(library)
@@ -70,26 +71,26 @@ module Nil
 
     def worker
       while true
+        source = nil
+        object = nil
         @mutex.synchronize do
-          if len(@targets) == 0 or @compilationFailed
-            @mutex.release()
+          if @targets.size == 0 || @compilationFailed
             return
           end
           source, object = @targets[0]
           @targets = @targets[1..-1]
         end
 
-        fpic_string = ''
+        fpicString = ''
         if @pic
           fpicString = ' -fPIC'
         end
 
-        Nil.consolePrint("#{Thread.current.inspect}: ")
         if !command("g++ -c #{source}#{fpicString} -o #{object}#{@includeString}")
           @mutex.synchronize do
             if !@compilationFailed
-              nil.printer.line('Compilation failed')
-              @compilationFailed = True
+              Nil.threadPrint('Compilation failed')
+              @compilationFailed = true
             end
           end
           return
@@ -115,12 +116,12 @@ module Nil
         threadString += 's'
       end
 
-      print "Compiling project with #{@threads} #{threadString}"
+      puts "Compiling project with #{@threads} #{threadString}"
 
       start = Time.new
 
       threads = []
-      @compilationFailed = False
+      @compilationFailed = false
       counter = 1
       @threads.times do |i|
         thread = Thread.new { worker }
@@ -136,7 +137,7 @@ module Nil
 
       difference = Time.new - start
       if success
-        printf("Compilation finished after %.2f s", difference)
+        printf("Compilation finished after %.2f s\n", difference)
       end
 
       return success
@@ -161,10 +162,10 @@ module Nil
       outputPath = Nil.joinPaths(@outputDirectory, @output)
       if !command('g++ -o ' + outputPath + @objectString + libraryString)
         puts 'Failed to link'
-        return False
+        return false
       end
 
-      return True
+      return true
     end
 
     def linkStaticLibrary
