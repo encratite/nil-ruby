@@ -146,4 +146,10 @@ module Nil
       File.symlink(target, link)
     end
   end
+
+  def self.getExtension(path)
+    offset = path.rindex('.')
+    return nil if offset == nil
+    return path[offset + 1..-1]
+  end
 end
