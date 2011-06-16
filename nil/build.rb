@@ -7,10 +7,12 @@ require 'nil/console'
 module Nil
   class Builder
     CPlusPlusExtension = 'cpp'
+    CUDAExtension = 'cu'
     ObjectExtension = 'o'
 
     def initialize(output)
       @includeDirectories = ['.']
+      @libraryDirectories = []
       @sourceFiles = []
       @libraries = []
 
@@ -22,6 +24,8 @@ module Nil
       @output = output
 
       @threads = 1
+
+      @compiler = 'g++'
 
       sources('source')
 
@@ -39,14 +43,25 @@ module Nil
       end
       directories, files = contents
       paths = files.map { |x| x.path }
+      paths.each do |path|
+        if Nil.getExtension(path) == CUDAExtension
+          puts 'This appears to be a CUDA project'
+          @compiler = 'nvcc'
+          break
+        end
+      end
       sourceFiles = paths.reject do |path|
-        Nil.getExtension(path) != CPlusPlusExtension
+        ![CPlusPlusExtension, CUDAExtension].include?(Nil.getExtension(path))
       end
       @sourceFiles += sourceFiles
     end
 
     def library(library)
       @libraries << library
+    end
+
+    def libraryDirectory(directory)
+      @libraryDirectories << directory
     end
 
     def makeDirectory(directory)
@@ -86,7 +101,7 @@ module Nil
           fpicString = ' -fPIC'
         end
 
-        if !command("g++ -c #{source}#{fpicString} -o #{object}#{@includeString}")
+        if !command("#{@compiler} -c #{source}#{fpicString} -o #{object}#{@includeDirectoryString}")
           @mutex.synchronize do
             if !@compilationFailed
               Nil.threadPrint('Compilation failed')
@@ -101,9 +116,14 @@ module Nil
     def compile
       makeDirectory(@objectDirectory)
 
-      @includeString = ''
+      @includeDirectoryString = ''
       @includeDirectories.each do |directory|
-        @includeString += " -I#{directory}"
+        @includeDirectoryString += " -I#{directory}"
+      end
+
+      @libraryDirectoryString = ''
+      @libraryDirectories.each do |directory|
+        @libraryDirectoryString += " -L#{directory}"
       end
 
       @objectString = ''
@@ -160,7 +180,7 @@ module Nil
       libraryString = getLibraryString
 
       outputPath = Nil.joinPaths(@outputDirectory, @output)
-      if !command('g++ -o ' + outputPath + @objectString + libraryString)
+      if !command("#{@compiler} -o " + outputPath + @objectString + @libraryDirectoryString + libraryString)
         puts 'Failed to link'
         return false
       end
@@ -180,7 +200,7 @@ module Nil
 
       @library = "#{@output}.so"
       output = Nil.joinPaths(@outputDirectory, @library)
-      return command('g++ -shared -o ' + output + @objectString + libraryString)
+      return command("#{@compiler} -shared -o " + output + @objectString + libraryString)
     end
 
     def program
