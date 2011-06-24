@@ -7,7 +7,9 @@ module Nil
   class HTTP
     Debugging = false
 
-    attr_accessor :ssl
+    attr_reader :cookies
+
+    attr_accessor :ssl, :referrer
 
     def initialize(server, cookies = {})
       @http = nil
@@ -15,26 +17,35 @@ module Nil
       @ssl = false
       @port = nil
       @server = server
+      @referrer = nil
     end
 
     def setHeaders
-      cookieArray = []
-      @cookies.each do |key, value|
-        value = CGI.escape(value)
-        cookieArray << "#{key}=#{value}"
-      end
-
-      cookieString = cookieArray.join('; ')
-
-      @headers =
-        {
+      @headers = {
         'User-Agent' => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
         'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language' => 'en-us,en;q=0.5',
         #'Accept-Encoding' => 'gzip,deflate',
         'Accept-Charset' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-        'Cookie' => cookieString
       }
+
+      if @referrer != nil
+        @headers['Referer'] = @referrer
+      end
+
+      if !@cookies.empty?
+        cookieArray = []
+        @cookies.each do |key, value|
+          value = CGI.escape(value)
+          cookieArray << "#{key}=#{value}"
+        end
+        cookieString = cookieArray.join('; ')
+        @headers['Cookie'] = cookieString
+      end
+      if Debugging
+        puts "Cookies: #{@cookies.inspect}"
+        puts "Headers: #{@headers.inspect}"
+      end
     end
 
     def httpInitialisation
@@ -93,16 +104,15 @@ module Nil
     def processResponse(response)
       setCookie = response.header['set-cookie']
       if setCookie != nil
-        ignore = ['expires', 'path', 'domain']
+        ignore = ['expires', 'path', 'domain', 'max-age']
         pattern = /([^ ]+?)=([^ ;,]+)/
         setCookie.scan(pattern) do |match|
           name = match[0]
-          next if ignore.include?(name)
+          next if ignore.include?(name.downcase)
           value = CGI.unescape(match[1])
           cookieHandler(name, value)
         end
       end
-      #puts @cookies.inspect
     end
 
     def locationToPath(location)
@@ -126,6 +136,7 @@ module Nil
       postData = getPostData(input)
       begin
         response = @http.request_post(path, postData, @headers)
+        puts "Response code: #{response.code}" if Debugging
         processResponse(response)
         location = response.header['Location']
         if location != nil
