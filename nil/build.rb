@@ -90,6 +90,10 @@ module Nil
       return system(commandString)
     end
 
+    def setCompiler(newCompiler)
+      @compiler = newCompiler
+    end
+
     def getAdditionalArguments
       additionalArguments = @additionalArguments.join(' ')
       if !additionalArguments.empty?
