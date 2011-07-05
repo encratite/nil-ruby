@@ -94,6 +94,10 @@ module Nil
       @compiler = newCompiler
     end
 
+    def addArgument(argument)
+      @additionalArguments << argument
+    end
+
     def getAdditionalArguments
       additionalArguments = @additionalArguments.join(' ')
       if !additionalArguments.empty?
