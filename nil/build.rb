@@ -6,6 +6,7 @@ require 'nil/console'
 
 module Nil
   class Builder
+    CExtension = 'c'
     CPlusPlusExtension = 'cpp'
     CUDAExtension = 'cu'
     ObjectExtension = 'o'
@@ -57,7 +58,7 @@ module Nil
         end
       end
       sourceFiles = paths.reject do |path|
-        ![CPlusPlusExtension, CUDAExtension].include?(Nil.getExtension(path))
+        ![CExtension, CPlusPlusExtension, CUDAExtension].include?(Nil.getExtension(path))
       end
       @sourceFiles += sourceFiles
     end
@@ -75,14 +76,7 @@ module Nil
     end
 
     def getObject(path)
-      extension = Nil.getExtension(path)
-      if extension == CPlusPlusExtension
-        output = path[0..- (extension.size + 2)]
-      else
-        output = path
-      end
-
-      return Nil.joinPaths(@objectDirectory, File.basename(output + '.' + ObjectExtension))
+      return Nil.joinPaths(@objectDirectory, File.basename(path + '.' + ObjectExtension))
     end
 
     def command(commandString)
