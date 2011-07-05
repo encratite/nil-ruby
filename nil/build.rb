@@ -27,9 +27,15 @@ module Nil
 
       @compiler = 'g++'
 
+      @additionalArguments = []
+
       sources('source')
 
       @mutex = Mutex.new
+    end
+
+    def argument(newArgument)
+      @additionalArguments << newArgument
     end
 
     def include(directory)
@@ -84,6 +90,14 @@ module Nil
       return system(commandString)
     end
 
+    def getAdditionalArguments
+      additionalArguments = @additionalArguments.join(' ')
+      if !additionalArguments.empty?
+        additionalArguments = ' ' + additionalArguments
+      end
+      return additionalArguments
+    end
+
     def worker
       while true
         source = nil
@@ -101,7 +115,7 @@ module Nil
           fpicString = ' -fPIC'
         end
 
-        if !command("#{@compiler} -c #{source}#{fpicString} -o #{object}#{@includeDirectoryString}")
+        if !command("#{@compiler} -c #{source}#{fpicString} -o #{object}#{@includeDirectoryString}#{getAdditionalArguments}")
           @mutex.synchronize do
             if !@compilationFailed
               Nil.threadPrint('Compilation failed')
@@ -180,7 +194,7 @@ module Nil
       libraryString = getLibraryString
 
       outputPath = Nil.joinPaths(@outputDirectory, @output)
-      if !command("#{@compiler} -o " + outputPath + @objectString + @libraryDirectoryString + libraryString)
+      if !command("#{@compiler} -o " + outputPath + @objectString + @libraryDirectoryString + libraryString + getAdditionalArguments)
         puts 'Failed to link'
         return false
       end
@@ -200,7 +214,7 @@ module Nil
 
       @library = "#{@output}.so"
       output = Nil.joinPaths(@outputDirectory, @library)
-      return command("#{@compiler} -shared -o " + output + @objectString + libraryString)
+      return command("#{@compiler} -shared -o " + output + @objectString + libraryString + getAdditionalArguments)
     end
 
     def program
@@ -218,6 +232,18 @@ module Nil
       makeTargets
       @pic = true
       return compile && linkDynamicLibrary
+    end
+
+    def optimise
+      @additionalArguments << '-O3'
+    end
+
+    #for CUDA
+    def shaderModel(model)
+      @additionalArguments += [
+        '-arch',
+        "sm_#{(model * 10).to_i}"
+        ]
     end
   end
 end
