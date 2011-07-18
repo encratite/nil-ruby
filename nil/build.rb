@@ -6,6 +6,7 @@ require 'nil/console'
 
 module Nil
   class Builder
+    CExtension = 'c'
     CPlusPlusExtension = 'cpp'
     CUDAExtension = 'cu'
     ObjectExtension = 'o'
@@ -27,9 +28,15 @@ module Nil
 
       @compiler = 'g++'
 
+      @additionalArguments = []
+
       sources('source')
 
       @mutex = Mutex.new
+    end
+
+    def argument(newArgument)
+      @additionalArguments << newArgument
     end
 
     def include(directory)
@@ -51,7 +58,7 @@ module Nil
         end
       end
       sourceFiles = paths.reject do |path|
-        ![CPlusPlusExtension, CUDAExtension].include?(Nil.getExtension(path))
+        ![CExtension, CPlusPlusExtension, CUDAExtension].include?(Nil.getExtension(path))
       end
       @sourceFiles += sourceFiles
     end
@@ -69,19 +76,28 @@ module Nil
     end
 
     def getObject(path)
-      extension = Nil.getExtension(path)
-      if extension == CPlusPlusExtension
-        output = path[0..- (extension.size + 2)]
-      else
-        output = path
-      end
-
-      return Nil.joinPaths(@objectDirectory, File.basename(output + '.' + ObjectExtension))
+      return Nil.joinPaths(@objectDirectory, File.basename(path + '.' + ObjectExtension))
     end
 
     def command(commandString)
       Nil.threadPrint("Executing: #{commandString}")
       return system(commandString)
+    end
+
+    def setCompiler(newCompiler)
+      @compiler = newCompiler
+    end
+
+    def addArgument(argument)
+      @additionalArguments << argument
+    end
+
+    def getAdditionalArguments
+      additionalArguments = @additionalArguments.join(' ')
+      if !additionalArguments.empty?
+        additionalArguments = ' ' + additionalArguments
+      end
+      return additionalArguments
     end
 
     def worker
@@ -101,7 +117,7 @@ module Nil
           fpicString = ' -fPIC'
         end
 
-        if !command("#{@compiler} -c #{source}#{fpicString} -o #{object}#{@includeDirectoryString}")
+        if !command("#{@compiler} -c #{source}#{fpicString} -o #{object}#{@includeDirectoryString}#{getAdditionalArguments}")
           @mutex.synchronize do
             if !@compilationFailed
               Nil.threadPrint('Compilation failed')
@@ -180,7 +196,7 @@ module Nil
       libraryString = getLibraryString
 
       outputPath = Nil.joinPaths(@outputDirectory, @output)
-      if !command("#{@compiler} -o " + outputPath + @objectString + @libraryDirectoryString + libraryString)
+      if !command("#{@compiler} -o " + outputPath + @objectString + @libraryDirectoryString + libraryString + getAdditionalArguments)
         puts 'Failed to link'
         return false
       end
@@ -200,7 +216,7 @@ module Nil
 
       @library = "#{@output}.so"
       output = Nil.joinPaths(@outputDirectory, @library)
-      return command("#{@compiler} -shared -o " + output + @objectString + libraryString)
+      return command("#{@compiler} -shared -o " + output + @objectString + libraryString + getAdditionalArguments)
     end
 
     def program
@@ -218,6 +234,18 @@ module Nil
       makeTargets
       @pic = true
       return compile && linkDynamicLibrary
+    end
+
+    def optimise
+      @additionalArguments << '-O3'
+    end
+
+    #for CUDA
+    def shaderModel(model)
+      @additionalArguments += [
+        '-arch',
+        "sm_#{(model * 10).to_i}"
+        ]
     end
   end
 end

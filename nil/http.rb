@@ -1,36 +1,51 @@
 require 'cgi'
 require 'net/http'
 require 'uri'
+require 'openssl'
 
 module Nil
   class HTTP
-    attr_accessor :ssl
+    Debugging = false
+
+    attr_reader :cookies
+
+    attr_accessor :ssl, :referrer
+
     def initialize(server, cookies = {})
       @http = nil
       @cookies = cookies
       @ssl = false
       @port = nil
       @server = server
+      @referrer = nil
     end
 
     def setHeaders
-      cookieArray = []
-      @cookies.each do |key, value|
-        value = CGI.escape(value)
-        cookieArray << "#{key}=#{value}"
-      end
-
-      cookieString = cookieArray.join('; ')
-
-      @headers =
-        {
-        'User-Agent' => 'User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3',
+      @headers = {
+        'User-Agent' => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
         'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language' => 'en-us,en;q=0.5',
         #'Accept-Encoding' => 'gzip,deflate',
         'Accept-Charset' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-        'Cookie' => cookieString
       }
+
+      if @referrer != nil
+        @headers['Referer'] = @referrer
+      end
+
+      if !@cookies.empty?
+        cookieArray = []
+        @cookies.each do |key, value|
+          value = CGI.escape(value)
+          cookieArray << "#{key}=#{value}"
+        end
+        cookieString = cookieArray.join('; ')
+        @headers['Cookie'] = cookieString
+      end
+      if Debugging
+        puts "Cookies: #{@cookies.inspect}"
+        puts "Headers: #{@headers.inspect}"
+      end
     end
 
     def httpInitialisation
@@ -50,14 +65,24 @@ module Nil
       setHeaders
     end
 
-    def get(path)
+    def get(path, origin = nil)
+      puts "GET #{path}" if Debugging
       httpInitialisation
 
       begin
         response = @http.request_get(path, @headers)
         processResponse(response)
+        location = response.header['Location']
+        if location != nil
+          newPath = locationToPath(location)
+          return nil if newPath == nil
+          if newPath == path
+            puts "Circular referral: #{newPath}"
+          end
+          return get(newPath, path)
+        end
         return response.body
-      rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError, SocketError => exception
+      rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError, SocketError, OpenSSL::SSL::SSLError => exception
         puts "GET exception: #{exception.inspect}"
         return nil
       end
@@ -72,30 +97,60 @@ module Nil
       return postData
     end
 
+    def cookieHandler(name, value)
+      @cookies[name] = value
+    end
+
     def processResponse(response)
       setCookie = response.header['set-cookie']
       if setCookie != nil
-        match = setCookie.match(/^(.+?)=(.+?);/)
-        if match == nil
-          raise "Invalid Set-Cookie field: #{setCookie.inspect}"
+        ignore = ['expires', 'path', 'domain', 'max-age']
+        pattern = /([^ ]+?)=([^ ;,]+)/
+        setCookie.scan(pattern) do |match|
+          name = match[0]
+          next if ignore.include?(name.downcase)
+          value = CGI.unescape(match[1])
+          cookieHandler(name, value)
         end
-        name = match[1]
-        value = CGI.unescape(match[2])
-        @cookies[name] = value
       end
     end
 
+    def locationToPath(location)
+      pattern = /[a-z]+:\/\/(.+?)(\/.*)/
+      match = location.match(pattern)
+      if match == nil
+        puts "Invalid location specified: #{location}"
+        return nil
+      end
+      if match[1] != @server
+        puts "Server mismatch: #{match[1]} vs. #{@server}"
+        return nil
+      end
+      return match[2]
+    end
+
     def post(path, input)
+      puts "POST #{path}" if Debugging
       httpInitialisation
 
       postData = getPostData(input)
       begin
-        @http.request_post(path, postData, @headers) do |response|
-          processResponse(response)
-          response.value
-          return response.read_body
+        response = @http.request_post(path, postData, @headers)
+        puts "Response code: #{response.code}" if Debugging
+        processResponse(response)
+        location = response.header['Location']
+        if location != nil
+          newPath = locationToPath(location)
+          return nil if newPath == nil
+          return get(newPath, path)
         end
-      rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError, SocketError => exception
+        return response.body
+        #@http.request_post(path, postData, @headers) do |response|
+        #  processResponse(response)
+        #  response.value
+        #  return response.read_body
+        #end
+      rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError, SocketError, OpenSSL::SSL::SSLError => exception
         puts "POST exception: #{exception.inspect}"
         return nil
       end
