@@ -12,4 +12,11 @@ module SymbolicAssignment
     symbol = SymbolicAssignment.translateSymbol(symbol)
     instance_variable_set(symbol, value)
   end
+
+  def setPublicMember(symbol, value)
+    setMember(symbol, value)
+    self.class.send(:define_method, symbol) do
+      getMember(symbol)
+    end
+  end
 end
