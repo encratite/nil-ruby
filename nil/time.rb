@@ -5,3 +5,9 @@ module Nil
     return tokens.join(' ')
   end
 end
+
+class Time
+  def utcString
+    return utc.to_s.split(' ')[0..1].join(' ')
+  end
+end
