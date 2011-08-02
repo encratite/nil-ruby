@@ -6,6 +6,8 @@ require 'nil/console'
 
 module Nil
   class Builder
+    attr_writer :threads
+
     CExtension = 'c'
     CPlusPlusExtension = 'cpp'
     CUDAExtension = 'cu'
