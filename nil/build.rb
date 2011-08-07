@@ -260,5 +260,10 @@ module Nil
         "sm_#{(model * 10).to_i}"
         ]
     end
+
+    #for C++ 0x
+    def ox
+      addArgument('-std=c++0x')
+    end
   end
 end
