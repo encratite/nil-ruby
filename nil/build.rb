@@ -6,7 +6,7 @@ require 'nil/console'
 
 module Nil
   class Builder
-    attr_writer :threads
+    attr_writer :threads, :sourceDirectories
 
     CExtension = 'c'
     CPlusPlusExtension = 'cpp'
@@ -32,7 +32,7 @@ module Nil
 
       @additionalArguments = []
 
-      sources('source')
+      @sourceDirectories = ['source']
 
       @mutex = Mutex.new
     end
@@ -63,6 +63,16 @@ module Nil
         ![CExtension, CPlusPlusExtension, CUDAExtension].include?(Nil.getExtension(path))
       end
       @sourceFiles += sourceFiles
+    end
+
+    def setSource(directory)
+      @sourceDirectories = [directory]
+    end
+
+    def loadSources
+      @sourceDirectories.each do |sourceDirectory|
+        sources(sourceDirectory)
+      end
     end
 
     def library(library)
@@ -132,6 +142,7 @@ module Nil
     end
 
     def compile
+      loadSources
       makeDirectory(@objectDirectory)
 
       @includeDirectoryString = ''
