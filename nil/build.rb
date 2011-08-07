@@ -45,7 +45,7 @@ module Nil
       @includeDirectories << directory
     end
 
-    def sources(directory)
+    def processSourceDirectory(directory)
       contents = Nil.readDirectory(directory, true)
       if contents == nil
         raise "Unable to read #{directory}"
@@ -71,7 +71,7 @@ module Nil
 
     def loadSources
       @sourceDirectories.each do |sourceDirectory|
-        sources(sourceDirectory)
+        processSourceDirectory(sourceDirectory)
       end
     end
 
@@ -142,7 +142,6 @@ module Nil
     end
 
     def compile
-      loadSources
       makeDirectory(@objectDirectory)
 
       @includeDirectoryString = ''
@@ -193,6 +192,7 @@ module Nil
     end
 
     def makeTargets
+      loadSources
       makeDirectory(@outputDirectory)
       @targets = @sourceFiles.map { |path| [path, getObject(path)] }
     end
