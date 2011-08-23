@@ -1,7 +1,8 @@
 module Nil
   def self.getDeviceBytes(device)
     data = `/sbin/ifconfig #{device}`
-    match = /RX bytes:(\d+).+?TX bytes:(\d+)/.match(data)
+    pattern = /RX.+?bytes.+?(\d+).+?TX.+?bytes.+?(\d+)/m
+    match = pattern.match(data)
     return nil if match == nil
     return [match[1].to_i, match[2].to_i]
   end
@@ -22,7 +23,11 @@ module Nil
 
   def self.getDeviceSpeedStrings(device)
     divisor = 1024.0
-    data = self.getDeviceSpeed(device).map { |value| sprintf('%.2f KiB/s', value / divisor) }
+    speed = self.getDeviceSpeed(device)
+    if speed == nil
+      return 'Not available'
+    end
+    data = speed.map { |value| sprintf('%.2f KiB/s', value / divisor) }
     return data
   end
 end
