@@ -265,5 +265,9 @@ module Nil
     def ox
       addArgument('-std=c++0x')
     end
+
+    def debug
+      @additionalArguments << '-g'
+    end
   end
 end
