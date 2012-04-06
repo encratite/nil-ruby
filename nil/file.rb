@@ -77,9 +77,9 @@ module Nil
 
   def self.readDirectory(path, separateDirectoriesAndFiles = false)
     begin
-      data = Dir.entries path
+      data = Dir.entries(path)
       data.reject! do |entry|
-        ['.', '..'].include? entry
+        ['.', '..'].include?(entry)
       end
 
       output = []
