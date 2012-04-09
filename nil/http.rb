@@ -119,8 +119,7 @@ module Nil
       pattern = /[a-z]+:\/\/(.+?)(\/.*)/
       match = location.match(pattern)
       if match == nil
-        puts "Invalid location specified: #{location}"
-        return nil
+        return "/#{location}"
       end
       if match[1] != @server
         puts "Server mismatch: #{match[1]} vs. #{@server}"
