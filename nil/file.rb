@@ -3,11 +3,12 @@ require_relative 'environment'
 
 module Nil
   class FileInformation
-    attr_reader :name, :path, :timeAccessed, :timeCreated, :timeModified, :symlink
+    attr_reader :name, :path, :directory, :timeAccessed, :timeCreated, :timeModified, :symlink
 
     def initialize(path)
       @name = File.basename(path)
       @path = path
+      @directory = File.dirname(path)
       if File.symlink?(path)
         data = File.lstat(path)
       else
