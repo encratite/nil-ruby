@@ -41,8 +41,8 @@ module Nil
       @additionalArguments << newArgument
     end
 
-    def include(directory)
-      @includeDirectories << directory
+    def include(*directories)
+      @includeDirectories += directories
     end
 
     def processSourceDirectory(directory)
@@ -65,8 +65,16 @@ module Nil
       @sourceFiles += sourceFiles
     end
 
-    def setSource(directory)
-      @sourceDirectories = [directory]
+    def setOutputDirectory(directory)
+      @outputDirectory = directory
+    end
+
+    def setObjectDirectory(directory)
+      @objectDirectory = directory
+    end
+
+    def setSourceDirectories(*directories)
+      @sourceDirectories = directories
     end
 
     def loadSources
@@ -250,7 +258,7 @@ module Nil
     end
 
     def optimise
-      @additionalArguments << '-O3'
+      addArgument('-O3')
     end
 
     #for CUDA
@@ -261,13 +269,12 @@ module Nil
         ]
     end
 
-    #for C++ 0x
-    def ox
-      addArgument('-std=c++0x')
+    def cpp11
+      addArgument('-std=c++11')
     end
 
     def debug
-      @additionalArguments << '-g'
+      addArgument('-g')
     end
   end
 end
