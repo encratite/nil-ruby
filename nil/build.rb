@@ -35,6 +35,12 @@ module Nil
       @sourceDirectories = ['source']
 
       @mutex = Mutex.new
+
+      @shellScript = nil
+    end
+
+    def writeShellScript(path)
+      @shellScript = File.open(path, 'wb+')
     end
 
     def argument(newArgument)
@@ -51,7 +57,7 @@ module Nil
         raise "Unable to read #{directory}"
       end
       directories, files = contents
-      paths = files.map { |x| x.path }
+      paths = files.map { |x| Nil.joinPaths(directory, x.name) }
       paths.each do |path|
         if Nil.getExtension(path) == CUDAExtension
           puts 'This appears to be a CUDA project'
@@ -92,7 +98,9 @@ module Nil
     end
 
     def makeDirectory(directory)
-      FileUtils.mkdir_p(directory)
+      if @shellScript == nil
+        FileUtils.mkdir_p(directory)
+      end
     end
 
     def getObject(path)
@@ -101,7 +109,12 @@ module Nil
 
     def command(commandString)
       Nil.threadPrint("Executing: #{commandString}")
-      return system(commandString)
+      if @shellScript == nil
+        return system(commandString)
+      else
+        @shellScript.write("#{commandString}\n")
+        return 1
+      end
     end
 
     def setCompiler(newCompiler)
