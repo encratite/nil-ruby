@@ -234,6 +234,10 @@ module Nil
     def linkProgram
       libraryString = getLibraryString
 
+      if @shellScript != nil
+          @shellScript.puts("echo \"Compiling #{@output}\"")
+        end
+
       outputPath = Nil.joinPaths(@outputDirectory, @output)
       if !command("#{@compiler} -o " + outputPath + @objectString + @libraryDirectoryString + libraryString + getAdditionalArguments)
         puts 'Failed to link'
