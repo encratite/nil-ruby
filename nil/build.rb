@@ -100,6 +100,8 @@ module Nil
     def makeDirectory(directory)
       if @shellScript == nil
         FileUtils.mkdir_p(directory)
+      else
+        @shellScript.write("mkdir -p #{directory}\n")
       end
     end
 
@@ -150,6 +152,9 @@ module Nil
           fpicString = ' -fPIC'
         end
 
+        if @shellScript != nil
+          @shellScript.puts("echo \"Compiling #{source}\"")
+        end
         if !command("#{@compiler} -c #{source}#{fpicString} -o #{object}#{@includeDirectoryString}#{getAdditionalArguments}")
           @mutex.synchronize do
             if !@compilationFailed
@@ -240,6 +245,9 @@ module Nil
 
     def linkStaticLibrary
       @library = "lib#{@output}.a"
+      if @shellScript != nil
+        @shellScript.puts("echo \"Building #{@library}\"")
+      end
       output = Nil.joinPaths(@outputDirectory, @library)
       FileUtils.rm_f(output)
       return command('ar -cq ' + output + @objectString)
