@@ -81,7 +81,7 @@ module Nil
           return get(newPath, path)
         end
         return response.body
-      rescue SystemCallError, Net::ProtocolError, RuntimeError, IOError, SocketError, OpenSSL::SSL::SSLError => exception
+      rescue exception
         puts "GET exception: #{exception.inspect}"
         return nil
       end
