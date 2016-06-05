@@ -205,7 +205,7 @@ module Nil
 
     def receiveData
       begin
-        timeout(@receiveTimeout) do
+        Timeout.timeout(@receiveTimeout) do
           if @socket.class == TCPSocket
             data = @socket.recv(@receiveSize)
           else
